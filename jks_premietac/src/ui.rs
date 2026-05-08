@@ -4,12 +4,33 @@ use ratatui::{
     style::{Color, Modifier, Style, Stylize},
     widgets::{Block, BorderType, List, ListItem, Paragraph, StatefulWidget, Widget},
 };
+use tui_tree_widget::{Tree, TreeItem, TreeState};
+
+use crate::{
+    app::{App, FocusedWidget},
+    song_lister::TreeId,
+};
 
 const SELECTED: Style = Style::new()
     .bg(Color::LightMagenta)
     .add_modifier(Modifier::BOLD);
 
-use crate::app::{App, FocusedWidget};
+fn render_left_tree(
+    state: &mut TreeState<TreeId>,
+    items: &[TreeItem<'static, TreeId>],
+    area: Rect,
+    buf: &mut Buffer,
+    border: Block<'_>,
+    highlight_style: Style,
+) {
+    let tree = Tree::new(items)
+        .expect("Nie sú všetky identifikátory unikátne")
+        .block(border)
+        .highlight_style(highlight_style)
+        .highlight_symbol(">>");
+
+    StatefulWidget::render(tree, area, buf, state);
+}
 
 impl App {
     pub fn render_left(&mut self, area: Rect, buf: &mut Buffer) {
@@ -17,6 +38,9 @@ impl App {
             .direction(Direction::Vertical)
             .constraints([Constraint::Length(4), Constraint::Min(0)])
             .split(area);
+
+        let search_text_value = self.song_lister.search.clone();
+        let items: Vec<TreeItem<'static, TreeId>> = self.song_lister.build_tree();
 
         let highlight_search = if self.focusing_widget == FocusedWidget::Search {
             Style::new().bg(Color::LightCyan)
@@ -29,15 +53,9 @@ impl App {
             .border_style(highlight_search)
             .border_type(BorderType::Rounded);
 
-        let search_text = Paragraph::new(self.song_lister.search.as_str()).block(search_bar);
-        search_text.render(chunks[0], buf);
+        let search_paragraph = Paragraph::new(search_text_value).block(search_bar);
+        search_paragraph.render(chunks[0], buf);
 
-        let items: Vec<ListItem> = self
-            .song_lister
-            .search_get_formated()
-            .into_iter()
-            .map(|s| ListItem::new(s))
-            .collect();
         let mut border = Block::bordered()
             .title("Pesničky v databáze")
             .title_alignment(Alignment::Center)
@@ -47,23 +65,14 @@ impl App {
             border = border.border_style(Style::new().bg(Color::LightCyan));
         }
 
-        if self.song_lister.state.selected().is_none() && !self.song_lister.song_manager.is_empty()
-        {
-            self.song_lister.state.select(Some(0));
-        }
-
         let highlight_style = if self.focusing_widget == FocusedWidget::Left {
             SELECTED
         } else {
             Style::new()
         };
 
-        let song_list = List::new(items)
-            .block(border)
-            .highlight_style(highlight_style)
-            .highlight_symbol(">>")
-            .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
-        StatefulWidget::render(song_list, chunks[1], buf, &mut self.song_lister.state);
+        let state: &mut TreeState<TreeId> = &mut self.song_lister.state;
+        render_left_tree(state, &items, chunks[1], buf, border, highlight_style);
     }
 
     pub fn render_right(&mut self, area: Rect, buf: &mut Buffer) {
@@ -72,8 +81,9 @@ impl App {
             .song_manager
             .get_format_all()
             .into_iter()
-            .map(|s| ListItem::new(s))
+            .map(ListItem::new)
             .collect();
+
         let mut border = Block::bordered()
             .title("Premietanie")
             .title_alignment(Alignment::Center)
@@ -100,6 +110,7 @@ impl App {
             .highlight_style(highlight_style)
             .highlight_symbol(">>")
             .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+
         StatefulWidget::render(song_list, area, buf, &mut self.selected_song_lister.state);
     }
 
@@ -109,7 +120,7 @@ impl App {
                 "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: pridať do premietania  |  Enter: upraviť  |  p: pridať pesničku  |  Delete: zmazať  |  q/Esc: ukončiť"
             }
             FocusedWidget::Right => {
-                "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: odstrániť z premietania  |  Home: štart prezentácie  |q/Esc: ukončiť"
+                "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: odstrániť z premietania  |  Home: štart prezentácie  |  q/Esc: ukončiť"
             }
             FocusedWidget::Search => {
                 "Píš pre hľadanie  |  Backspace: zmaž znak  |  Tab: prepni panel  |  q/Esc: ukončiť"
@@ -130,12 +141,6 @@ impl App {
 }
 
 impl Widget for &mut App {
-    /// Renders the user interface widgets.
-    ///
-    // This is where you add new widgets.
-    // See the following resources:
-    // - https://docs.rs/ratatui/latest/ratatui/widgets/index.html
-    // - https://github.com/ratatui/ratatui/tree/master/examples
     fn render(self, area: Rect, buf: &mut Buffer) {
         let outer = Layout::default()
             .direction(Direction::Vertical)

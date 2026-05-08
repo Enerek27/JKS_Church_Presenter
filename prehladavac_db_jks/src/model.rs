@@ -1,6 +1,9 @@
 use diesel::prelude::*;
 
-use crate::library_jks::{SongJks, StrofaJKS};
+use crate::{
+    library_jks::{SongJks, StrofaJKS},
+    schema::song_types,
+};
 
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::jks)]
@@ -31,4 +34,26 @@ impl From<&JksStrofaDB> for StrofaJKS {
             text: value.text.clone(),
         }
     }
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = crate::schema::song_types)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct SongTypeDB {
+    pub id: Option<i32>, // Nullable<Integer>
+    pub name: String,    // Text
+}
+
+#[derive(Queryable)]
+#[diesel(table_name = crate::schema::jks_types)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct JksTypeDB {
+    pub song_id: i32,
+    pub type_id: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = song_types)]
+pub struct NewSongTypeDB {
+    pub name: String,
 }

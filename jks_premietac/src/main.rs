@@ -3,6 +3,7 @@ use crate::app::App;
 pub mod app;
 pub mod event;
 pub mod file_opener;
+pub mod popups;
 pub mod song_lister;
 pub mod ui;
 

@@ -7,12 +7,7 @@ use crate::{gui::run_gui, initializer::init_song_manager};
 pub mod gui;
 pub mod initializer;
 
-
-
-
 fn main() {
-
-
     let exe_path = match env::current_exe() {
         Ok(p) => p,
         Err(e) => {
@@ -20,7 +15,7 @@ fn main() {
             return;
         }
     };
-    
+
     let base_dir = match exe_path.parent() {
         Some(dir) => dir,
         None => {
@@ -29,7 +24,6 @@ fn main() {
         }
     };
 
-    
     let path = base_dir.join("temp_song_manager.json");
     let path_str = path.to_string_lossy();
 

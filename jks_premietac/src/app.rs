@@ -6,15 +6,12 @@ use std::{
 use crate::{
     event::{AppEvent, Event, EventHandler},
     file_opener::{fo_add_song, fo_delete_song, fo_open_to_edit_song},
-    song_lister::SongLister,
+    song_lister::{SongLister, SongListerList, TreeId},
 };
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
-
-
-
-
+use tui_tree_widget;
 
 #[derive(Debug, PartialEq)]
 pub enum FocusedWidget {
@@ -36,7 +33,7 @@ pub struct App {
 
     pub song_lister: SongLister,
 
-    pub selected_song_lister: SongLister,
+    pub selected_song_lister: SongListerList,
 }
 
 impl Default for App {
@@ -47,7 +44,7 @@ impl Default for App {
             events: EventHandler::new(),
             focusing_widget: FocusedWidget::Left,
             song_lister: SongLister::new(),
-            selected_song_lister: SongLister::default(),
+            selected_song_lister: SongListerList::default(),
         }
     }
 }
@@ -84,6 +81,8 @@ impl App {
                     AppEvent::AddSong => self.add_song(),
                     AppEvent::DeleteSong => self.delete_song(),
                     AppEvent::PresentationStart => self.presentation_start(),
+                    AppEvent::ExpandFolder => self.expand_folder(),
+                    AppEvent::CollapseFolder => self.collapse_folder(),
                 },
             }
         }
@@ -107,6 +106,9 @@ impl App {
                 KeyCode::Enter => self.events.send(AppEvent::EditSong),
                 KeyCode::Char('p') => self.events.send(AppEvent::AddSong),
                 KeyCode::Delete => self.events.send(AppEvent::DeleteSong),
+                KeyCode::Left => self.events.send(AppEvent::CollapseFolder),
+                KeyCode::Right => self.events.send(AppEvent::ExpandFolder),
+
                 // Other handlers you could add here.
                 _ => {}
             }
@@ -174,69 +176,74 @@ impl App {
     }
 
     pub fn select_song(&mut self) {
-        if self.focusing_widget == FocusedWidget::Left || !self.song_lister.song_manager.is_empty()
-        {
-            let index = match self.song_lister.state.selected() {
-                Some(i) => i,
-                None => 0,
-            };
-            let string = match self.song_lister.search_get_formated().get(index) {
-                Some(s) => s.to_lowercase(),
-                None => String::new(),
-            };
+        if self.focusing_widget != FocusedWidget::Left {
+            return;
+        }
 
-            let cislo_opt: Option<i32> = string
-                .split_whitespace()
-                .next()
-                .and_then(|num_str| num_str.parse::<i32>().ok());
+        let song_id = match self.get_selected_song_id() {
+            Some(id) => id,
+            None => return,
+        };
 
-            if let Some(idecko) = cislo_opt {
-                let pesnicka_opt = self.song_lister.song_manager.get_song_by_id(idecko);
-                if let Some(pesnicka) = pesnicka_opt {
-                    self.selected_song_lister
-                        .song_manager
-                        .add_song(pesnicka.clone());
-                }
-            }
+        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id) {
+            self.selected_song_lister
+                .song_manager
+                .add_song(song.clone());
         }
     }
 
-    pub fn remove_selected_song(&mut self) {
-        if self.focusing_widget == FocusedWidget::Right
-            && !self.selected_song_lister.song_manager.is_empty()
-        {
-            let index = match self.selected_song_lister.state.selected() {
-                Some(i) => i,
-                None => 0,
-            };
-            self.selected_song_lister.song_manager.piesne.remove(index);
+    fn get_selected_song_id(&self) -> Option<i32> {
+        // selected() -> &[TreeId]
+        let selected_path = self.song_lister.state.selected();
+
+        // ak nič nie je vybraté, pole je prázdne
+        let last = match selected_path.last() {
+            Some(l) => l, // &TreeId
+            None => return None,
+        };
+
+        match last {
+            TreeId::Song(id) => Some(*id),
+            _ => None,
         }
+    }
+    pub fn remove_selected_song(&mut self) {
+        if self.focusing_widget != FocusedWidget::Right {
+            return;
+        }
+
+        if self.selected_song_lister.song_manager.is_empty() {
+            return;
+        }
+
+        // index vybraného prvku v pravom zozname
+        let index = match self.selected_song_lister.state.selected() {
+            Some(i) => i,
+            None => return,
+        };
+
+        if index >= self.selected_song_lister.song_manager.piesne.len() {
+            return;
+        }
+
+        // odstrániť pesničku z pravého zoznamu
+        self.selected_song_lister.song_manager.piesne.remove(index);
     }
 
     pub fn edit_song(&mut self) {
-        if self.focusing_widget == FocusedWidget::Left && !self.song_lister.song_manager.is_empty()
-        {
-            let index = match self.song_lister.state.selected() {
-                Some(i) => i,
-                None => 0,
-            };
+        if self.focusing_widget != FocusedWidget::Left {
+            return;
+        }
 
-            let string = match self.song_lister.search_get_formated().get(index) {
-                Some(s) => s.to_lowercase(),
-                None => String::new(),
-            };
+        let song_id = match self.get_selected_song_id() {
+            Some(id) => id,
+            None => return,
+        };
 
-            let cislo_opt: Option<i32> = string
-                .split_whitespace()
-                .next()
-                .and_then(|num_str| num_str.parse::<i32>().ok());
+        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id) {
+            let copy = song.clone();
 
-            if let Some(idecko) = cislo_opt {
-                if let Some(pesnicka) = self.song_lister.song_manager.get_song_by_id(idecko) {
-                    let copy = pesnicka.clone();
-                    fo_open_to_edit_song(&copy, &mut self.song_lister.song_manager);
-                }
-            }
+            fo_open_to_edit_song(&copy, &mut self.song_lister.song_manager);
         }
     }
 
@@ -248,36 +255,24 @@ impl App {
     }
 
     pub fn delete_song(&mut self) {
-        if self.focusing_widget == FocusedWidget::Left && !self.song_lister.song_manager.is_empty()
-        {
-            let index = match self.song_lister.state.selected() {
-                Some(i) => i,
-                None => 0,
-            };
-
-            let string = match self.song_lister.search_get_formated().get(index) {
-                Some(s) => s.to_lowercase(),
-                None => String::new(),
-            };
-
-            let cislo_opt: Option<i32> = string
-                .split_whitespace()
-                .next()
-                .and_then(|num_str| num_str.parse::<i32>().ok());
-
-            if let Some(idecko) = cislo_opt {
-                let pesnicka_opt = self.song_lister.song_manager.get_song_by_id(idecko);
-                if let Some(pesnicka) = pesnicka_opt {
-                    self.song_lister.song_manager = fo_delete_song(pesnicka);
-                }
-            }
+        if self.focusing_widget != FocusedWidget::Left {
+            return;
         }
+
+        let song_id = match self.get_selected_song_id() {
+            Some(id) => id,
+            None => return,
+        };
+
+        let song = match self.song_lister.song_manager.get_song_by_id(song_id) {
+            Some(s) => s.clone(),
+            None => return,
+        };
+
+        fo_delete_song(&mut self.song_lister.song_manager, &song);
     }
 
-    fn presentation_start(&self) {
-
-        
-        
+    pub fn presentation_start(&self) {
         let exe_path = match env::current_exe() {
             Ok(p) => p,
             Err(e) => {
@@ -285,7 +280,7 @@ impl App {
                 return;
             }
         };
-        
+
         let base_dir = match exe_path.parent() {
             Some(dir) => dir,
             None => {
@@ -296,7 +291,11 @@ impl App {
 
         let song_manager_path = base_dir.join("temp_song_manager.json");
 
-        self.selected_song_lister.song_manager.save_to_file_json(song_manager_path.to_str().expect("Neplatná cesta zlé znaky UTF-8"));
+        self.selected_song_lister.song_manager.save_to_file_json(
+            song_manager_path
+                .to_str()
+                .expect("Neplatná cesta zlé znaky UTF-8"),
+        );
 
         let presenter_path = base_dir.join("tvoric_platna");
 
@@ -318,6 +317,18 @@ impl App {
             Err(e) => {
                 eprintln!("Nepodarilo sa spustiť presenter: {}", e);
             }
+        }
+    }
+
+    pub fn collapse_folder(&mut self) {
+        if self.focusing_widget == FocusedWidget::Left {
+            self.song_lister.collapse();
+        }
+    }
+
+    pub fn expand_folder(&mut self) {
+        if self.focusing_widget == FocusedWidget::Left {
+            self.song_lister.expand();
         }
     }
 }

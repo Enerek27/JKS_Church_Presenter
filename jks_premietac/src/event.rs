@@ -40,6 +40,9 @@ pub enum AppEvent {
     IncrementSong,
     DecrementSong,
 
+    ExpandFolder,
+    CollapseFolder,
+
     SelectSong,
     RemoveSelectedSong,
 

@@ -2,97 +2,37 @@
 use std::process::Command;
 use std::{
     fs::{File, remove_file},
-    io::{BufRead, BufReader, BufWriter, Write, stdout},
-    process::Command,
+    io::{BufRead, BufReader, BufWriter, Write},
 };
 
-use native_dialog::DialogBuilder;
-
-use inputbox::InputBox;
 use prehladavac_db_jks::{
-    db::{db_delete_song, db_insert_song, db_load_all},
+    db::{db_delete_song, db_insert_song},
     library_jks::{SongJks, SongManager, StrofaJKS},
 };
-use ratatui::crossterm::{
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
+
+use crate::popups::{ask_song_id, ask_song_type, send_yes_no_messege, show_error};
 
 const FILE_PATH: &str = "./upravujem_text.txt";
 
-fn show_error(msg: &str) {
-    DialogBuilder::message()
-        .set_level(native_dialog::MessageLevel::Error)
-        .set_title("Chyba")
-        .set_text(msg)
-        .confirm()
-        .show()
-        .unwrap();
-}
-
-fn open_editor_and_wait(path: &str) {
-    let editor = "mousepad";
-    use std::process::Command;
-
-    Command::new(editor)
-        .arg(path)
-        .status()
-        .expect("Nepodarilo sa otvoriť editor linux");
-}
-
-fn ask_song_id() -> i32 {
-    loop {
-        let result = InputBox::new()
-            .title("Zadaj pravdivo")
-            .prompt("Zadaj id novej pesničky (číslo)")
-            .show()
-            .unwrap();
-
-        let Some(text) = result else {
-            //oznamit uzivatelovy ze nazadal nic
-            show_error("Nebolo nic zadane");
-            continue;
-        };
-
-        match text.trim().parse() {
-            Ok(c) => return c,
-            Err(_) => {}
-        };
-
-        //treba oznamit pouzivatelovy ze nezadal cislo
-        show_error("Zle zadané číslo");
-    }
-}
-
-fn send_yes_no_messege(msg: &str) -> bool {
-    DialogBuilder::message()
-        .set_level(native_dialog::MessageLevel::Info)
-        .set_title("Otazka")
-        .set_text(msg)
-        .confirm()
-        .show()
-        .unwrap_or(false)
-}
-
-pub fn fo_delete_song(song_for_delete: &SongJks) -> SongManager {
+pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks) {
     let msg = format!(
         "{}: {}",
         "Naozaj chces odstranit pesnicky s id", song_for_delete.id
     );
     if !send_yes_no_messege(&msg) {
-        return db_load_all();
+        return;
     };
 
     db_delete_song(song_for_delete.id);
-    db_load_all()
+    song_manager.remove_song_by_id(song_for_delete.id);
 }
 
 pub fn fo_add_song(song_manager: &mut SongManager) {
     let subor = File::create(FILE_PATH).expect("Subor sa Nepodarilo vytvorit");
-
-    let writer = BufWriter::new(subor);
+    let _writer = BufWriter::new(subor); // len vytvoríš prázdny súbor
 
     open_and_wait(FILE_PATH);
+
     let mut song_id;
     loop {
         song_id = ask_song_id();
@@ -106,10 +46,17 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
         };
     }
 
+    let typec = ask_song_type();
+    let vysledok_typ = match typec {
+        Some(r) => r,
+        None => vec![],
+    };
+
     let songa = SongJks {
         id: song_id,
         pocet_strof: 0,
         strofy: vec![],
+        typ_pesnicky: vysledok_typ,
     };
 
     nacitaj_zo_suboru(song_manager, &songa);
@@ -185,7 +132,12 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
 
     // poskladáme novú SongJks
     let pocet_strof = (nove_strofy.len() as i32) - 1; // ako u teba
-    let nova_songa = SongJks::new(songa_edit.id, pocet_strof, nove_strofy);
+    let nova_songa = SongJks::new(
+        songa_edit.id,
+        pocet_strof,
+        nove_strofy,
+        songa_edit.typ_pesnicky.clone(),
+    );
 
     db_delete_song(songa_edit.id);
     song_manager.remove_song_by_id(songa_edit.id);
@@ -204,6 +156,8 @@ fn open_and_wait(path: &str) {
 
     #[cfg(target_os = "linux")]
     {
+        use crate::popups::open_editor_and_wait;
+
         open_editor_and_wait(path);
     }
 

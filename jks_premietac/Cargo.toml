@@ -15,6 +15,9 @@ tokio = { version = "1.40.0", features = ["full"] }
 color-eyre = "0.6.3"
 inputbox = "0.1.1"
 native-dialog = "0.9.6"
+tui-tree-widget = "0.24.0"
+egui = "0.34.2"
+eframe = "0.34.2"
 
 # Read the optimization guideline for more details: https://ratatui.rs/recipes/apps/release-your-app/#optimizations
 [profile.release]

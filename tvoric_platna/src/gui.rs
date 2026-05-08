@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use eframe::egui;
 use egui::{Align, Color32, FontFamily, Frame, Layout, RichText, ViewportBuilder};
 
@@ -18,10 +20,8 @@ pub struct SongScreenApp {
     manager: SongManager,
     song_idx: usize,
     strofa_idx: usize,
-    //blackscreen: bool,
+    space_pressed: bool,
     transition: Transition,
-    
-    
 }
 
 impl SongScreenApp {
@@ -31,6 +31,7 @@ impl SongScreenApp {
             song_idx: 0,
             strofa_idx: 0,
             transition: Transition::Viewing,
+            space_pressed: false,
             //blackscreen: false,
         }
     }
@@ -109,22 +110,26 @@ impl eframe::App for SongScreenApp {
 
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.input(|i| {
-
             // ❌ ESC = exit app
             if i.key_pressed(egui::Key::Escape) {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                return;
+                std::process::exit(0);
             }
 
             // =========================
             // SPACE = MANUAL BLACKSCREEN TOGGLE
             // =========================
             if i.key_pressed(egui::Key::Space) {
-                self.transition = match self.transition {
-                    Transition::BlackScreen { .. } => Transition::Viewing,
-                    Transition::Viewing => Transition::BlackScreen {
-                        direction: Direction::Next, // default (nevadí, nepoužije sa pri manuálnom)
-                    },
+                match self.transition {
+                    Transition::BlackScreen { .. } => {
+                        self.transition = Transition::Viewing;
+                        self.space_pressed = false;
+                    }
+                    Transition::Viewing => {
+                        self.transition = Transition::BlackScreen {
+                            direction: Direction::Next, // default (nevadí, nepoužije sa pri manuálnom)
+                        };
+                        self.space_pressed = true;
+                    }
                 };
                 /*
                 if self.blackscreen {
@@ -167,6 +172,23 @@ impl eframe::App for SongScreenApp {
                     return;
                 }
 
+                if i.key_pressed(egui::Key::ArrowUp) {
+                    if self.song_idx + 1 < self.manager.piesne.len() {
+                        self.song_idx = self.song_idx + 1;
+                        self.strofa_idx = 0;
+                    }
+                    return;
+                }
+
+                if i.key_pressed(egui::Key::ArrowDown) {
+                    if self.song_idx > 0 {
+                        self.song_idx = self.song_idx - 1;
+                        self.strofa_idx = 0;
+                    }
+
+                    return;
+                }
+
                 return;
             }
 
@@ -180,6 +202,9 @@ impl eframe::App for SongScreenApp {
                     return;
                 }
                 */
+                if self.space_pressed {
+                    return;
+                }
                 // ➡ NEXT SONG
                 if i.key_pressed(egui::Key::ArrowRight) {
                     if self.song_idx + 1 < self.manager.piesne.len() {
@@ -213,9 +238,6 @@ impl eframe::App for SongScreenApp {
 }
 
 pub fn run_gui(manager: SongManager) -> eframe::Result<()> {
-
-
-
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
             .with_fullscreen(true)

@@ -5,6 +5,7 @@ pub mod schema;
 use serde_json;
 pub mod library_jks {
     use std::{
+        fmt::{Display, Formatter},
         fs::{File, remove_file},
         io::{BufReader, BufWriter},
     };
@@ -18,19 +19,75 @@ pub mod library_jks {
         pub text: String,
     }
 
+    #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
+    pub enum TypPiesne {
+        Vianocna,
+        Velkonocna,
+        Postna,
+        Marianska,
+        Antifona,
+        Teize,
+    }
+
+    impl TypPiesne {
+        pub fn from_str_db(name: &str) -> Option<Self> {
+            match name {
+                "Vianočná" => Some(TypPiesne::Vianocna),
+                "Velkonočná" => Some(TypPiesne::Velkonocna),
+                "Pôstna" => Some(TypPiesne::Postna),
+                "Mariánska" => Some(TypPiesne::Marianska),
+                "Antifona" => Some(TypPiesne::Antifona),
+                "Teize" => Some(TypPiesne::Teize),
+                _ => None,
+            }
+        }
+
+        pub fn all() -> &'static [TypPiesne] {
+            &[
+                TypPiesne::Vianocna,
+                TypPiesne::Velkonocna,
+                TypPiesne::Postna,
+                TypPiesne::Marianska,
+                TypPiesne::Antifona,
+                TypPiesne::Teize,
+            ]
+        }
+    }
+
+    impl Display for TypPiesne {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            let navrat = match self {
+                TypPiesne::Vianocna => "Vianočná",
+                TypPiesne::Velkonocna => "Velkonočná",
+                TypPiesne::Postna => "Pôstna",
+                TypPiesne::Marianska => "Mariánska",
+                TypPiesne::Antifona => "Antifona",
+                TypPiesne::Teize => "Teize",
+            };
+            write!(f, "{}", navrat)
+        }
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SongJks {
         pub id: i32,
         pub pocet_strof: i32,
         pub strofy: Vec<StrofaJKS>,
+        pub typ_pesnicky: Vec<TypPiesne>,
     }
 
     impl SongJks {
-        pub fn new(id: i32, pocet_strof: i32, strofy: Vec<StrofaJKS>) -> SongJks {
+        pub fn new(
+            id: i32,
+            pocet_strof: i32,
+            strofy: Vec<StrofaJKS>,
+            typ_piesne: Vec<TypPiesne>,
+        ) -> SongJks {
             let ret = SongJks {
                 id,
                 pocet_strof,
                 strofy,
+                typ_pesnicky: typ_piesne,
             };
             ret
         }
