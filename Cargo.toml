@@ -2,5 +2,6 @@
 members = [
     "prehladavac_db_jks",
     "jks_premietac",
+    "tvoric_platna",
 ]
 resolver = "2"

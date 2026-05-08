@@ -105,9 +105,15 @@ impl App {
 
     pub fn render_help_bar(&mut self, area: Rect, buf: &mut Buffer) {
         let text = match self.focusing_widget {
-            FocusedWidget::Left => "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: pridať do premietania  |  Enter: upraviť  |  p: pridať pesničku  |  Delete: zmazať  |  q/Esc: ukončiť",
-            FocusedWidget::Right => "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: odstrániť z premietania  |  q/Esc: ukončiť",
-            FocusedWidget::Search => "Píš pre hľadanie  |  Backspace: zmaž znak  |  Tab: prepni panel  |  q/Esc: ukončiť",
+            FocusedWidget::Left => {
+                "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: pridať do premietania  |  Enter: upraviť  |  p: pridať pesničku  |  Delete: zmazať  |  q/Esc: ukončiť"
+            }
+            FocusedWidget::Right => {
+                "Tab: prepni panel  |  Šípky: pohyb  |  Medzerník: odstrániť z premietania  |  Home: štart prezentácie  |q/Esc: ukončiť"
+            }
+            FocusedWidget::Search => {
+                "Píš pre hľadanie  |  Backspace: zmaž znak  |  Tab: prepni panel  |  q/Esc: ukončiť"
+            }
         };
 
         let para = Paragraph::new(text)
@@ -120,10 +126,7 @@ impl App {
             .alignment(Alignment::Left);
 
         para.render(area, buf);
-    
     }
-
-
 }
 
 impl Widget for &mut App {
@@ -134,18 +137,13 @@ impl Widget for &mut App {
     // - https://docs.rs/ratatui/latest/ratatui/widgets/index.html
     // - https://github.com/ratatui/ratatui/tree/master/examples
     fn render(self, area: Rect, buf: &mut Buffer) {
-
         let outer = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Min(1),
-                Constraint::Length(1)
-            ])
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
             .split(area);
 
         let content_area = outer[0];
         let help_area = outer[1];
-
 
         let main_split = Layout::default()
             .direction(Direction::Horizontal)

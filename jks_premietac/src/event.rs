@@ -46,6 +46,8 @@ pub enum AppEvent {
     EditSong,
     AddSong,
     DeleteSong,
+
+    PresentationStart,
 }
 
 /// Terminal event handler.

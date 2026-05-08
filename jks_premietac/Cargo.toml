@@ -22,3 +22,7 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+[[bin]]
+name = "jks_premietac"
+path = "src/main.rs"

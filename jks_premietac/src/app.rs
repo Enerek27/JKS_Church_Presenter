@@ -1,3 +1,8 @@
+use std::{
+    env,
+    process::{Command, Stdio},
+};
+
 use crate::{
     event::{AppEvent, Event, EventHandler},
     file_opener::{fo_add_song, fo_delete_song, fo_open_to_edit_song},
@@ -6,6 +11,10 @@ use crate::{
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
+
+
+
+
 
 #[derive(Debug, PartialEq)]
 pub enum FocusedWidget {
@@ -74,6 +83,7 @@ impl App {
                     AppEvent::EditSong => self.edit_song(),
                     AppEvent::AddSong => self.add_song(),
                     AppEvent::DeleteSong => self.delete_song(),
+                    AppEvent::PresentationStart => self.presentation_start(),
                 },
             }
         }
@@ -103,6 +113,7 @@ impl App {
         } else if self.focusing_widget == FocusedWidget::Right {
             match key_event.code {
                 KeyCode::Char(' ') => self.events.send(AppEvent::RemoveSelectedSong),
+                KeyCode::Home => self.events.send(AppEvent::PresentationStart),
                 // Other handlers you could add here.
                 _ => {}
             }
@@ -221,7 +232,6 @@ impl App {
                 .and_then(|num_str| num_str.parse::<i32>().ok());
 
             if let Some(idecko) = cislo_opt {
-
                 if let Some(pesnicka) = self.song_lister.song_manager.get_song_by_id(idecko) {
                     let copy = pesnicka.clone();
                     fo_open_to_edit_song(&copy, &mut self.song_lister.song_manager);
@@ -238,9 +248,9 @@ impl App {
     }
 
     pub fn delete_song(&mut self) {
-         if self.focusing_widget == FocusedWidget::Left && !self.song_lister.song_manager.is_empty()
+        if self.focusing_widget == FocusedWidget::Left && !self.song_lister.song_manager.is_empty()
         {
-             let index = match self.song_lister.state.selected() {
+            let index = match self.song_lister.state.selected() {
                 Some(i) => i,
                 None => 0,
             };
@@ -258,9 +268,55 @@ impl App {
             if let Some(idecko) = cislo_opt {
                 let pesnicka_opt = self.song_lister.song_manager.get_song_by_id(idecko);
                 if let Some(pesnicka) = pesnicka_opt {
-                    self.song_lister.song_manager =
-                        fo_delete_song(pesnicka);
+                    self.song_lister.song_manager = fo_delete_song(pesnicka);
                 }
+            }
+        }
+    }
+
+    fn presentation_start(&self) {
+
+        
+        
+        let exe_path = match env::current_exe() {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("Chyba pri current_exe: {}", e);
+                return;
+            }
+        };
+        
+        let base_dir = match exe_path.parent() {
+            Some(dir) => dir,
+            None => {
+                eprintln!("Nepodarilo sa získať parent directory");
+                return;
+            }
+        };
+
+        let song_manager_path = base_dir.join("temp_song_manager.json");
+
+        self.selected_song_lister.song_manager.save_to_file_json(song_manager_path.to_str().expect("Neplatná cesta zlé znaky UTF-8"));
+
+        let presenter_path = base_dir.join("tvoric_platna");
+
+        let status = Command::new(&presenter_path)
+            .arg("--fullscreen")
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status();
+
+        match status {
+            Ok(exit_status) => {
+                if exit_status.success() {
+                    println!("Presenter skončil OK");
+                } else {
+                    println!("Presenter skončil s chybou: {:?}", exit_status);
+                }
+            }
+
+            Err(e) => {
+                eprintln!("Nepodarilo sa spustiť presenter: {}", e);
             }
         }
     }

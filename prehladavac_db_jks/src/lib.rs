@@ -4,10 +4,12 @@ pub mod schema;
 
 use serde_json;
 pub mod library_jks {
-    use std::{fs::{File, remove_file}, io::{BufReader, BufWriter}};
+    use std::{
+        fs::{File, remove_file},
+        io::{BufReader, BufWriter},
+    };
 
-use serde::{Deserialize, Serialize};
-
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct StrofaJKS {
@@ -50,7 +52,7 @@ use serde::{Deserialize, Serialize};
         }
     }
 
-    #[derive(Debug,Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct SongManager {
         pub piesne: Vec<SongJks>,
     }
@@ -98,7 +100,7 @@ use serde::{Deserialize, Serialize};
             ret
         }
 
-        pub fn save_to_file_json(&self,path: &str) {
+        pub fn save_to_file_json(&self, path: &str) {
             let file = File::create(path).expect("Chyba otvorenia suboru pre ulozenie json");
             let writer = BufWriter::new(file);
 
@@ -113,7 +115,5 @@ use serde::{Deserialize, Serialize};
             remove_file(path).expect("Subor po manažérovy sa nepodarilo odstranit");
             ret
         }
-
-
     }
 }

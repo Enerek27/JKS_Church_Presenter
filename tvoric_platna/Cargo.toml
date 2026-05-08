@@ -1,0 +1,14 @@
+[package]
+name = "tvoric_platna"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.34.2"
+egui = "0.34.2"
+prehladavac_db_jks ={ path = "../prehladavac_db_jks"}
+winit = "0.30.13"
+
+[[bin]]
+name = "tvoric_platna"
+path = "src/main.rs"

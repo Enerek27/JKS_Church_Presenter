@@ -75,19 +75,17 @@ fn send_yes_no_messege(msg: &str) -> bool {
 }
 
 pub fn fo_delete_song(song_for_delete: &SongJks) -> SongManager {
-
-    let msg = format!("{}: {}", "Naozaj chces odstranit pesnicky s id", song_for_delete.id);
+    let msg = format!(
+        "{}: {}",
+        "Naozaj chces odstranit pesnicky s id", song_for_delete.id
+    );
     if !send_yes_no_messege(&msg) {
-       return  db_load_all();
+        return db_load_all();
     };
-    
+
     db_delete_song(song_for_delete.id);
     db_load_all()
-
-
 }
-
-
 
 pub fn fo_add_song(song_manager: &mut SongManager) {
     let subor = File::create(FILE_PATH).expect("Subor sa Nepodarilo vytvorit");
@@ -117,7 +115,6 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
     nacitaj_zo_suboru(song_manager, &songa);
 
     remove_file(FILE_PATH).expect("Nepodarilo sa vymazať súbor");
-    
 }
 
 pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
@@ -139,7 +136,6 @@ pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
     nacitaj_zo_suboru(song_manager, songa);
 
     remove_file(FILE_PATH).expect("Nepodarilo sa vymazať súbor");
-    
 }
 
 fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
@@ -195,8 +191,6 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
     song_manager.remove_song_by_id(songa_edit.id);
     db_insert_song(&nova_songa);
     song_manager.add_song(nova_songa);
-
-    
 }
 
 fn open_and_wait(path: &str) {

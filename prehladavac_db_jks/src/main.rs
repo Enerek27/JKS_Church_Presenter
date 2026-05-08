@@ -1,11 +1,13 @@
 use std::{collections::BTreeMap, error::Error, fs::File};
 
-use prehladavac_db_jks::{db::db_insert_song, library_jks::{SongJks, StrofaJKS}};
-
+use prehladavac_db_jks::{
+    db::db_insert_song,
+    library_jks::{SongJks, StrofaJKS},
+};
 
 // -> Result<(), Box<dyn Error>>
 fn main() {
- /*  // 1. Otvor CSV súbor
+    /*  // 1. Otvor CSV súbor
     let file = File::open("jks.csv")?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(false) // podľa tvojho príkladu
