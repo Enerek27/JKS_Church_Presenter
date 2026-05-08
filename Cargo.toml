@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "prehladavac_db_jks",
+    "jks_premietac",
+]
+resolver = "2"

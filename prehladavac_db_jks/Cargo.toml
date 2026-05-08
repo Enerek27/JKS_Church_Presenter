@@ -1,0 +1,11 @@
+[package]
+name = "prehladavac_db_jks"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+csv = "1.4.0"
+diesel = { version = "2.3.7", features = ["sqlite"] }
+dotenvy = "0.15.0"
+serde = { version = "1.0.228", features = ["serde_derive"] }
+serde_json = "1.0.149"

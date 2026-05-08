@@ -1,0 +1,24 @@
+[package]
+name = "jks_premietac"
+version = "0.1.0"
+description = "An example generated using the event-driven-async template"
+authors = ["Enerek27 <tomhroncek@gmail.com>"]
+license = "MIT"
+edition = "2024"
+
+[dependencies]
+prehladavac_db_jks ={ path = "../prehladavac_db_jks"}
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+futures = "0.3.31"
+ratatui = "0.30.0"
+tokio = { version = "1.40.0", features = ["full"] }
+color-eyre = "0.6.3"
+inputbox = "0.1.1"
+native-dialog = "0.9.6"
+
+# Read the optimization guideline for more details: https://ratatui.rs/recipes/apps/release-your-app/#optimizations
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
