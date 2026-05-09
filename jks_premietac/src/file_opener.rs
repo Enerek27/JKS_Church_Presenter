@@ -1,7 +1,7 @@
 #[cfg(target_os = "windows")]
 use std::process::Command;
 use std::{
-    fs::{File, remove_file},
+    fs::{remove_file, File},
     io::{BufRead, BufReader, BufWriter, Write},
 };
 
@@ -14,6 +14,7 @@ use crate::popups::{ask_song_id, ask_song_type, send_yes_no_messege, show_error}
 
 const FILE_PATH: &str = "./upravujem_text.txt";
 
+/// Odstráni pesničku z databázy aj z `SongManager` po potvrdení používateľom.
 pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks) {
     let msg = format!(
         "{}: {}",
@@ -27,6 +28,8 @@ pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks)
     song_manager.remove_song_by_id(song_for_delete.id);
 }
 
+/// Vytvorí novú pesničku tak, že otvorí dočasný textový súbor v editore,
+/// načíta z neho strofy a uloží pesničku do DB aj do `SongManager`.
 pub fn fo_add_song(song_manager: &mut SongManager) {
     let subor = File::create(FILE_PATH).expect("Subor sa Nepodarilo vytvorit");
     let _writer = BufWriter::new(subor);
@@ -43,7 +46,6 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
         }
     }
 
-    // predpoklad: ask_song_type() -> Option<TypPiesne>
     let typ = match ask_song_type() {
         Some(t) => t,
         None => {
@@ -64,6 +66,8 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
     remove_file(FILE_PATH).expect("Nepodarilo sa vymazať súbor");
 }
 
+/// Otvorí existujúcu pesničku v textovom editore, umožní úpravu,
+/// a po uložení prepíše pesničku v DB aj v `SongManager`.
 pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
     let subor = File::create(FILE_PATH).expect("Subor sa Nepodarilo vytvorit");
 
@@ -74,7 +78,9 @@ pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
         writer
             .write(line.as_bytes())
             .expect("Chyba zapisu do suboru");
-        writer.write(b"\n\n").expect("Chyba zápisu noveho riadka");
+        writer
+            .write(b"\n\n")
+            .expect("Chyba zápisu noveho riadka");
     }
     writer.flush().expect("Chyba pri flushnuti");
 
@@ -85,6 +91,7 @@ pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
     remove_file(FILE_PATH).expect("Nepodarilo sa vymazať súbor");
 }
 
+/// Načíta strofy z dočasného textového súboru a vytvorí z nich novú verziu pesničky.
 fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
     let subor = File::open(FILE_PATH).expect("Subor sa nepodarilo otvorit na citanie");
     let reader = BufReader::new(subor);
@@ -105,7 +112,7 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
                 let strofa = StrofaJKS {
                     id: songa_edit.id,
                     cislo_strofy,
-                    typ_piesne: Some(songa_edit.typ_pesnicky), // nový field
+                    typ_piesne: Some(songa_edit.typ_pesnicky),
                     text,
                 };
                 nove_strofy.push(strofa);
@@ -143,6 +150,7 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
     song_manager.add_song(nova_songa);
 }
 
+/// Spustí externý editor a počká, kým používateľ súbor zavrie.
 fn open_and_wait(path: &str) {
     #[cfg(target_os = "windows")]
     {

@@ -2,15 +2,17 @@ pub mod db;
 pub mod model;
 pub mod schema;
 
+/// Typy a dátové štruktúry pre prácu s JKS pesničkami a ich správu.
 pub mod library_jks {
     use std::{
         fmt::{Display, Formatter},
-        fs::{File, remove_file},
+        fs::{remove_file, File},
         io::{BufReader, BufWriter},
     };
 
     use serde::{Deserialize, Serialize};
 
+    /// Jedna strofa JKS pesničky uložená v pamäti.
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct StrofaJKS {
         pub id: i32,
@@ -19,6 +21,7 @@ pub mod library_jks {
         pub text: String,
     }
 
+    /// Vysoká kategória typu pesničky (JKS podtyp, antifóna, Taizé atď.).
     #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
     pub enum TypPiesne {
         JKS(JKSTypPiesne),
@@ -28,6 +31,8 @@ pub mod library_jks {
         Mladeznicka,
         Hymna,
     }
+
+    /// Podtypy JKS pesničiek podľa liturgickej kategórie.
     #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy)]
     pub enum JKSTypPiesne {
         Advent,
@@ -53,6 +58,7 @@ pub mod library_jks {
     }
 
     impl TypPiesne {
+        /// Vytvorí typ pesničky z textu tak, ako je uložený v databáze.
         pub fn from_str_db(name: &str) -> Option<Self> {
             match name {
                 "Antifona Šurin" => Some(TypPiesne::AntifonaSurin),
@@ -94,6 +100,7 @@ pub mod library_jks {
             }
         }
 
+        /// Vráti všetky typy pesničiek v poradí používanom v aplikácii.
         pub fn all() -> &'static [TypPiesne] {
             &[
                 TypPiesne::AntifonaSurin,
@@ -159,7 +166,8 @@ pub mod library_jks {
             write!(f, "{}", navrat)
         }
     }
-    impl std::fmt::Display for JKSTypPiesne {
+
+    impl Display for JKSTypPiesne {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             let navrat = match self {
                 JKSTypPiesne::Advent => "Advent",
@@ -187,6 +195,7 @@ pub mod library_jks {
         }
     }
 
+    /// Celá JKS pesnička vrátane strof a typu.
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SongJks {
         pub id: i32,
@@ -196,38 +205,42 @@ pub mod library_jks {
     }
 
     impl SongJks {
+        /// Vytvorí novú pesničku z id, počtu strof, zoznamu strof a typu pesničky.
         pub fn new(
             id: i32,
             pocet_strof: i32,
             strofy: Vec<StrofaJKS>,
             typ_piesne: TypPiesne,
         ) -> SongJks {
-            let ret = SongJks {
+            SongJks {
                 id,
                 pocet_strof,
                 strofy,
                 typ_pesnicky: typ_piesne,
-            };
-            ret
+            }
         }
 
+        /// Vráti text zadanej strofy podľa indexu, alebo chybové hlásenie.
         pub fn get_strofa_text(&self, number_of_strofa: i32) -> &str {
             if let Some(strofa) = self.strofy.get(number_of_strofa as usize) {
-                return &strofa.text;
-            };
-            return "Nenajdene ERROR";
+                &strofa.text
+            } else {
+                "Nenajdene ERROR"
+            }
         }
 
+        /// Naformátuje pesničku pre zobrazenie v zoznamoch (id a názov/strofa 0).
         pub fn format_song(&self) -> String {
-            let strofa = match self.strofy.get(0) {
-                Some(s) => s,
-                None => panic!("Nenajdena strofa padam. Nie je strofa 0 alias nazov"),
-            };
+            let strofa = self
+                .strofy
+                .get(0)
+                .expect("Nenajdena strofa 0 (názov pesničky)");
 
             format!("{:>5}  {}", self.id, strofa.text)
         }
     }
 
+    /// Kontajner na všetky pesničky s pomocnými metódami.
     #[derive(Debug, Serialize, Deserialize)]
     pub struct SongManager {
         pub piesne: Vec<SongJks>,
@@ -240,56 +253,60 @@ pub mod library_jks {
     }
 
     impl SongManager {
+        /// Vytvorí prázdny správca pesničiek.
         pub fn new() -> SongManager {
             SongManager { piesne: vec![] }
         }
 
+        /// Nájde pesničku podľa id.
         pub fn get_song_by_id(&self, id: i32) -> Option<&SongJks> {
             self.piesne.iter().find(|s| s.id == id)
         }
 
+        /// Pridá pesničku a udržiava zoznam zoradený podľa id.
         pub fn add_song(&mut self, napridanie: SongJks) {
             self.piesne.push(napridanie);
             self.piesne.sort_by_key(|s| s.id);
         }
 
+        /// Odstráni pesničku podľa id, ak existuje.
         pub fn remove_song_by_id(&mut self, id: i32) {
             if let Some(index) = self.piesne.iter().position(|s| s.id == id) {
                 self.piesne.remove(index);
             }
         }
 
+        /// Vráti všetky pesničky ako zoznam referencií.
         pub fn get_all_songs(&self) -> Vec<&SongJks> {
-            let mut ret = Vec::new();
-            for song in &self.piesne {
-                ret.push(song);
-            }
-
-            ret
+            self.piesne.iter().collect()
         }
 
+        /// Zistí, či správca neobsahuje žiadne pesničky.
         pub fn is_empty(&self) -> bool {
             self.piesne.is_empty()
         }
 
+        /// Vráti všetky pesničky naformátované ako textové riadky.
         pub fn get_format_all(&self) -> Vec<String> {
-            let ret = self.piesne.iter().map(|s| s.format_song()).collect();
-            ret
+            self.piesne.iter().map(|s| s.format_song()).collect()
         }
 
+        /// Uloží manažéra pesničiek do JSON súboru.
         pub fn save_to_file_json(&self, path: &str) {
-            let file = File::create(path).expect("Chyba otvorenia suboru pre ulozenie json");
+            let file = File::create(path).expect("Chyba otvorenia suboru pre uloženie JSON");
             let writer = BufWriter::new(file);
 
             serde_json::to_writer_pretty(writer, self).expect("Chyba serializácie manažéra");
         }
 
+        /// Načíta manažéra pesničiek z JSON súboru a po načítaní súbor odstráni.
         pub fn load_manager_from_json(path: &str) -> SongManager {
             let file = File::open(path).expect("Chyba pri otváraní súboru pre načítanie manažéra");
             let reader = BufReader::new(file);
 
-            let ret = serde_json::from_reader(reader).expect("Chyba pri deserializácii manažéra");
-            remove_file(path).expect("Subor po manažérovy sa nepodarilo odstranit");
+            let ret =
+                serde_json::from_reader(reader).expect("Chyba pri deserializácii manažéra");
+            remove_file(path).expect("Subor po manažérovi sa nepodarilo odstrániť");
             ret
         }
     }

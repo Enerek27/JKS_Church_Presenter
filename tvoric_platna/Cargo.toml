@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = "0.34.2"
+eframe = { version = "0.34.2", default-features = true }
 egui = "0.34.2"
+inputbox = "0.1.1"
+native-dialog = "0.9.6"
 prehladavac_db_jks ={ path = "../prehladavac_db_jks"}
+monitor_lib ={ path = "../monitor_lib"}
 winit = "0.30.13"
 
 [[bin]]

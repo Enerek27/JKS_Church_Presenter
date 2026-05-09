@@ -1,7 +1,7 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
+    style::{Color, Modifier, Style},
     widgets::{Block, BorderType, List, ListItem, Paragraph, StatefulWidget, Widget},
 };
 use tui_tree_widget::{Tree, TreeItem, TreeState};
@@ -33,6 +33,7 @@ fn render_left_tree(
 }
 
 impl App {
+    /// Renderuje ľavý panel so stromom piesní a vyhľadávacím riadkom.
     pub fn render_left(&mut self, area: Rect, buf: &mut Buffer) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -75,6 +76,7 @@ impl App {
         render_left_tree(state, &items, chunks[1], buf, border, highlight_style);
     }
 
+    /// Renderuje pravý panel so zoznamom vybraných piesní na premietanie.
     pub fn render_right(&mut self, area: Rect, buf: &mut Buffer) {
         let items: Vec<ListItem> = self
             .selected_song_lister
@@ -114,6 +116,7 @@ impl App {
         StatefulWidget::render(song_list, area, buf, &mut self.selected_song_lister.state);
     }
 
+    /// Renderuje spodný pomocný panel s nápovedou podľa aktívneho panelu.
     pub fn render_help_bar(&mut self, area: Rect, buf: &mut Buffer) {
         let text = match self.focusing_widget {
             FocusedWidget::Left => {
@@ -141,6 +144,7 @@ impl App {
 }
 
 impl Widget for &mut App {
+    /// Hlavný vstup na vykreslenie celej aplikácie do terminálu.
     fn render(self, area: Rect, buf: &mut Buffer) {
         let outer = Layout::default()
             .direction(Direction::Vertical)

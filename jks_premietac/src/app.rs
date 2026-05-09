@@ -9,9 +9,8 @@ use crate::{
     song_lister::{SongLister, SongListerList, TreeId},
 };
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::DefaultTerminal;
-use tui_tree_widget;
 
 #[derive(Debug, PartialEq)]
 pub enum FocusedWidget {
@@ -298,6 +297,28 @@ impl App {
         );
 
         let presenter_path = base_dir.join("tvoric_platna");
+
+        let monitor_selector_path = base_dir.join("monitor_selector");
+
+        let status = Command::new(&monitor_selector_path)
+            .arg("--fullscreen")
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status();
+
+        match status {
+            Ok(exit_status) => {
+                if exit_status.success() {
+                    println!("monitor selector OK");
+                } else {
+                    println!("monitor selector s chybou: {:?}", exit_status);
+                }
+            }
+
+            Err(e) => {
+                eprintln!("Nepodarilo sa spustiť monitor selector: {}", e);
+            }
+        }
 
         let status = Command::new(&presenter_path)
             .arg("--fullscreen")

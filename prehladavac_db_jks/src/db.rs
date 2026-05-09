@@ -1,25 +1,21 @@
-use std::collections::{BTreeMap, HashMap};
+//! Funkcie na prácu s databázou pesničiek (uloženie, načítanie, mazanie).
+
+use std::collections::BTreeMap;
 use std::env;
 
-use diesel::dsl::{delete, insert_into, sql};
-use diesel::sql_types::Integer;
-use diesel::{
-    Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection,
-};
+use diesel::{Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 use dotenvy::dotenv;
 
 use crate::library_jks::TypPiesne;
-
 use crate::schema;
 use crate::schema::jks::dsl::jks;
 use crate::schema::jks::id;
-
 use crate::{
     library_jks::{SongJks, SongManager, StrofaJKS},
     model::JksStrofaDB,
-    schema::jks::cislo_stofy,
 };
 
+/// Vytvorí pripojenie k SQLite databáze podľa premennej prostredia `DATABASE_URL`.
 pub fn establish_connection() -> SqliteConnection {
     dotenv().ok();
 
@@ -28,6 +24,7 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
+/// Vloží jednu strofu do tabuľky `jks`.
 pub fn db_insert_strofa(strofa: &StrofaJKS, conn: &mut SqliteConnection) {
     let insert_jks: JksStrofaDB = strofa.into();
 
@@ -37,18 +34,19 @@ pub fn db_insert_strofa(strofa: &StrofaJKS, conn: &mut SqliteConnection) {
         .expect("Error inserting into db");
 }
 
+/// Vloží celú pesničku do databázy.
+///
+/// Typ pesničky sa uloží len pri prvej strofe (cislo_strofy = 0),
+/// ostatné strofy majú v stĺpci typu hodnotu `NULL`.
 pub fn db_insert_song(song: &SongJks) {
     let conn = &mut establish_connection();
 
     for (idx, strofa) in song.strofy.iter().enumerate() {
-        // spravíme kópiu strofy, aby sme jej mohli nastaviť typ
         let mut s = strofa.clone();
 
         if idx == 0 {
-            // prvá strofa dostane typ pesničky
             s.typ_piesne = Some(song.typ_pesnicky);
         } else {
-            // ostatné strofy bez typu (NULL v DB)
             s.typ_piesne = None;
         }
 
@@ -56,14 +54,19 @@ pub fn db_insert_song(song: &SongJks) {
     }
 }
 
+/// Zmaže všetky strofy pesničky s daným číslom z databázy.
 pub fn db_delete_song(cislo_piesne: i32) {
     let conn = &mut establish_connection();
 
     let _ = diesel::delete(jks.filter(id.eq(cislo_piesne))).execute(conn);
 }
 
+/// Načíta všetky pesničky z databázy a vráti ich v `SongManager`.
+///
+/// Riadky sú zoradené podľa `id` a `cislo_strofy`, zoskupené podľa `id`
+/// a pre každú skupinu sa vytvorí inštancia `SongJks`.
 pub fn db_load_all() -> SongManager {
-    use crate::schema::jks::dsl as jks_dsl; // TOTO je dôležitý riadok
+    use crate::schema::jks::dsl as jks_dsl;
 
     let conn = &mut establish_connection();
 

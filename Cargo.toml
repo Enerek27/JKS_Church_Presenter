@@ -2,6 +2,6 @@
 members = [
     "prehladavac_db_jks",
     "jks_premietac",
-    "tvoric_platna",
+    "tvoric_platna", "monitor_selector", "monitor_lib",
 ]
 resolver = "2"

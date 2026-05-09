@@ -9,13 +9,21 @@ use prehladavac_db_jks::{
     library_jks::{SongJks, StrofaJKS, TypPiesne},
 };
 
+/// Načíta piesne z `jks.csv` a importuje ich do databázy.
+///
+/// CSV stĺpce:
+/// `id,cislo_strofy,typ,text`
+/// - `id`: číslo piesne
+/// - `cislo_strofy`: poradové číslo strofy (0 = názov)
+/// - `typ`: `"none"` alebo textový názov typu (napr. „Advent“)
+/// - `text`: text strofy, `\n` sa nahrádza za reálny nový riadok
 fn init_db() {
     let path = "jks.csv";
 
     let file = File::open(path).expect("Neviem otvoriť CSV súbor");
     let reader = BufReader::new(file);
 
-    // mapa: id_piesne -> (Vec<StrofaJKS>, Option<TypPiesne>)
+    // mapa: id_piesne -> (zoznam strof, zistený typ piesne)
     let mut songs: BTreeMap<i32, (Vec<StrofaJKS>, Option<TypPiesne>)> = BTreeMap::new();
 
     for (line_no, line_res) in reader.lines().enumerate() {
@@ -32,7 +40,7 @@ fn init_db() {
             continue;
         }
 
-        // rozparsuj: id,cislo_strofy,typ,text
+        // Rozparsuj: id,cislo_strofy,typ,text (s jednoduchou podporou úvodzoviek).
         let mut parts = Vec::new();
         let mut current = String::new();
         let mut in_quotes = false;
@@ -132,8 +140,9 @@ fn init_db() {
         }
     }
 
-    // teraz máme všetky pesničky v mape, tak ich vložíme do DB
+    // Teraz máme všetky pesničky v mape, tak ich vložíme do DB.
     for (id, (mut strofy, typ_opt)) in songs {
+        // zoradíme strofy podľa čísla
         strofy.sort_by_key(|s| s.cislo_strofy);
 
         let pocet_strof = (strofy.len() as i32) - 1;
@@ -146,7 +155,8 @@ fn init_db() {
     }
 }
 
-// -> Result<(), Box<dyn Error>>
 fn main() {
-    //init_db();
+    // Jednorazový import – nechávame zakomentované, aby sa to
+    // nespúšťalo pri každom behu.
+    // init_db();
 }

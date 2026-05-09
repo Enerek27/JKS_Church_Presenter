@@ -1,21 +1,26 @@
-use std::process::exit;
-
 use eframe::egui;
-use egui::{Align, Color32, FontFamily, Frame, Layout, RichText, ViewportBuilder};
+use egui::ViewportBuilder;
 
+use monitor_lib::monitor_lib::MonitorGeometry;
 use prehladavac_db_jks::library_jks::SongManager;
-use winit::event_loop::EventLoop;
 
+/// Stav medzi zobrazením textu a čiernou obrazovkou.
 pub enum Transition {
+    /// Zobrazuje sa text aktuálnej strofy.
     Viewing,
+    /// Čierna obrazovka pri prechode medzi pesničkami.
     BlackScreen { direction: Direction },
 }
 
+/// Smer prechodu pri čiernej obrazovke.
 pub enum Direction {
+    /// Prechod na nasledujúcu pesničku.
     Next,
+    /// Prechod na predchádzajúcu pesničku.
     Previous,
 }
 
+/// Aplikácia na zobrazenie piesní na projektore.
 pub struct SongScreenApp {
     manager: SongManager,
     song_idx: usize,
@@ -25,6 +30,7 @@ pub struct SongScreenApp {
 }
 
 impl SongScreenApp {
+    /// Vytvorí novú aplikáciu so zadaným správcom piesní.
     pub fn new(manager: SongManager) -> Self {
         Self {
             manager,
@@ -32,10 +38,10 @@ impl SongScreenApp {
             strofa_idx: 0,
             transition: Transition::Viewing,
             space_pressed: false,
-            //blackscreen: false,
         }
     }
 
+    /// Vráti text aktuálnej strofy alebo prázdny reťazec pri blackscreene.
     fn current_text(&self) -> &str {
         match self.transition {
             Transition::BlackScreen { .. } => "",
@@ -48,21 +54,19 @@ impl SongScreenApp {
                 .unwrap_or(""),
         }
     }
-
-    // TU JE TVOJA ui() METÓDA
 }
 
 impl eframe::App for SongScreenApp {
-    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    /// Kreslí aktuálny stav na obrazovku (čierne pozadie + text strofy).
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let text = self.current_text();
         egui::Frame::default()
             .fill(egui::Color32::BLACK)
             .show(ui, |ui| {
                 let rect = ui.max_rect();
-
                 let available_size = rect.size();
 
-                // Hľadanie najväčšieho možného fontu
+                // Hľadanie najväčšieho použiteľného fontu (binárne vyhľadávanie).
                 let mut min = 8.0;
                 let mut max = 200.0;
                 let mut best = 32.0;
@@ -108,16 +112,14 @@ impl eframe::App for SongScreenApp {
             });
     }
 
+    /// Spracováva vstupy z klávesnice a mení stav zobrazenia.
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.input(|i| {
-            // ❌ ESC = exit app
             if i.key_pressed(egui::Key::Escape) {
                 std::process::exit(0);
             }
 
-            // =========================
-            // SPACE = MANUAL BLACKSCREEN TOGGLE
-            // =========================
+            // Prepínanie manuálneho blackscreenu medzerníkom.
             if i.key_pressed(egui::Key::Space) {
                 match self.transition {
                     Transition::BlackScreen { .. } => {
@@ -126,24 +128,17 @@ impl eframe::App for SongScreenApp {
                     }
                     Transition::Viewing => {
                         self.transition = Transition::BlackScreen {
-                            direction: Direction::Next, // default (nevadí, nepoužije sa pri manuálnom)
+                            direction: Direction::Next,
                         };
                         self.space_pressed = true;
                     }
                 };
-                /*
-                if self.blackscreen {
-                    self.blackscreen = !self.blackscreen;
-                }
-                */
                 return;
             }
 
-            // =========================
-            // VIEWING MODE
-            // =========================
+            // Režim zobrazenia textu.
             if let Transition::Viewing = self.transition {
-                // ➡ NEXT / STROFA
+                // Nasledujúca strofa / prechod na blackscreen.
                 if i.key_pressed(egui::Key::ArrowRight) {
                     if let Some(song) = self.manager.piesne.get(self.song_idx) {
                         if self.strofa_idx + 1 < song.strofy.len() {
@@ -152,14 +147,13 @@ impl eframe::App for SongScreenApp {
                         }
                     }
 
-                    // koniec piesne → transition
                     self.transition = Transition::BlackScreen {
                         direction: Direction::Next,
                     };
                     return;
                 }
 
-                // ⬅ PREVIOUS / STROFA
+                // Predchádzajúca strofa / blackscreen späť.
                 if i.key_pressed(egui::Key::ArrowLeft) {
                     if self.strofa_idx > 0 {
                         self.strofa_idx -= 1;
@@ -172,40 +166,36 @@ impl eframe::App for SongScreenApp {
                     return;
                 }
 
+                // Ďalšia pesnička (prvá strofa).
                 if i.key_pressed(egui::Key::ArrowUp) {
                     if self.song_idx + 1 < self.manager.piesne.len() {
-                        self.song_idx = self.song_idx + 1;
+                        self.song_idx += 1;
                         self.strofa_idx = 0;
                     }
                     return;
                 }
 
+                // Predchádzajúca pesnička (prvá strofa).
                 if i.key_pressed(egui::Key::ArrowDown) {
                     if self.song_idx > 0 {
-                        self.song_idx = self.song_idx - 1;
+                        self.song_idx -= 1;
                         self.strofa_idx = 0;
                     }
-
                     return;
                 }
 
                 return;
             }
 
-            // =========================
-            // BLACKSCREEN MODE
-            // =========================
+            // Režim čiernej obrazovky (automatický prechod medzi piesňami).
             if let Transition::BlackScreen { .. } = self.transition {
                 let mut changed = false;
-                /*
-                if self.blackscreen {
-                    return;
-                }
-                */
+
                 if self.space_pressed {
                     return;
                 }
-                // ➡ NEXT SONG
+
+                // Nasledujúca pesnička.
                 if i.key_pressed(egui::Key::ArrowRight) {
                     if self.song_idx + 1 < self.manager.piesne.len() {
                         self.song_idx += 1;
@@ -214,7 +204,7 @@ impl eframe::App for SongScreenApp {
                     }
                 }
 
-                // ⬅ PREVIOUS SONG
+                // Predchádzajúca pesnička (posledná strofa).
                 if i.key_pressed(egui::Key::ArrowLeft) {
                     if self.song_idx > 0 {
                         self.song_idx -= 1;
@@ -226,7 +216,6 @@ impl eframe::App for SongScreenApp {
                     }
                 }
 
-                // návrat do normálu iba ak sa niečo zmenilo
                 if changed {
                     self.transition = Transition::Viewing;
                 }
@@ -237,35 +226,35 @@ impl eframe::App for SongScreenApp {
     }
 }
 
-pub fn run_gui(manager: SongManager) -> eframe::Result<()> {
+/// Spustí fullscreen GUI na danom monitore s piesňami zo `SongManager`.
+pub fn run_gui(manager: SongManager, geom: MonitorGeometry) -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
-            .with_fullscreen(true)
             .with_decorations(false)
-            .with_title("Song Screen"),
+            .with_title("Song Screen")
+            .with_inner_size([geom.width, geom.height])
+            .with_position([geom.x, geom.y])
+            .with_fullscreen(true),
         ..Default::default()
     };
 
     eframe::run_native(
         "Song Screen",
         options,
-        Box::new(|cc| {
-            // ===== FONT SETUP =====
+        Box::new(move |cc| {
             let mut fonts = eframe::egui::FontDefinitions::default();
-
             fonts.font_data.insert(
                 "inter_bold".to_owned(),
                 eframe::egui::FontData::from_static(include_bytes!("./assets/Roboto-Bold.ttf"))
                     .into(),
             );
-
             fonts
                 .families
                 .entry(eframe::egui::FontFamily::Proportional)
                 .or_default()
                 .insert(0, "inter_bold".to_owned());
-
             cc.egui_ctx.set_fonts(fonts);
+
             Ok(Box::new(SongScreenApp::new(manager)))
         }),
     )

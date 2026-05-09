@@ -2,6 +2,7 @@ use inputbox::InputBox;
 use native_dialog::DialogBuilder;
 use prehladavac_db_jks::library_jks::TypPiesne;
 
+/// Zobrazí chybové hlásenie v natívnom dialógovom okne.
 pub fn show_error(msg: &str) {
     DialogBuilder::message()
         .set_level(native_dialog::MessageLevel::Error)
@@ -12,6 +13,7 @@ pub fn show_error(msg: &str) {
         .unwrap();
 }
 
+/// Otvorí externý editor a počká, kým používateľ súbor zatvorí.
 pub fn open_editor_and_wait(path: &str) {
     let editor = "mousepad";
     use std::process::Command;
@@ -22,6 +24,7 @@ pub fn open_editor_and_wait(path: &str) {
         .expect("Nepodarilo sa otvoriť editor linux");
 }
 
+/// Opakovane sa pýta na ID pesničky, kým používateľ nezadá platné celé číslo.
 pub fn ask_song_id() -> i32 {
     loop {
         let result = InputBox::new()
@@ -44,6 +47,7 @@ pub fn ask_song_id() -> i32 {
     }
 }
 
+/// Zobrazí otázku typu „áno/nie“ a vráti `true` pri potvrdení.
 pub fn send_yes_no_messege(msg: &str) -> bool {
     DialogBuilder::message()
         .set_level(native_dialog::MessageLevel::Info)
@@ -54,6 +58,9 @@ pub fn send_yes_no_messege(msg: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// Nechá používateľa vybrať typ piesne zo zoznamu a vráti zvolený `TypPiesne`.
+///
+/// Ak používateľ výber zruší alebo nie sú dostupné žiadne typy, vráti `None`.
 pub fn ask_song_type() -> Option<TypPiesne> {
     let all = TypPiesne::all();
 
@@ -62,7 +69,6 @@ pub fn ask_song_type() -> Option<TypPiesne> {
     }
 
     loop {
-        // poskladaj text so zoznamom možností
         let mut prompt = String::from("Vyber typ piesne (zadaj číslo):\n\n");
         for (i, t) in all.iter().enumerate() {
             prompt.push_str(&format!("{}: {}\n", i + 1, t.to_string()));
@@ -74,7 +80,6 @@ pub fn ask_song_type() -> Option<TypPiesne> {
             .show()
             .unwrap();
 
-        // používateľ zatvoril okno / stlačil Cancel
         let Some(text) = result else {
             return None;
         };
@@ -86,7 +91,7 @@ pub fn ask_song_type() -> Option<TypPiesne> {
 
         match trimmed.parse::<usize>() {
             Ok(n) if n >= 1 && n <= all.len() => {
-                return Some(all[n - 1]); // indexovanie od 0
+                return Some(all[n - 1]);
             }
             _ => {
                 show_error("Zlé číslo typu piesne");
