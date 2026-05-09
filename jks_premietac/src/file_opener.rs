@@ -29,34 +29,34 @@ pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks)
 
 pub fn fo_add_song(song_manager: &mut SongManager) {
     let subor = File::create(FILE_PATH).expect("Subor sa Nepodarilo vytvorit");
-    let _writer = BufWriter::new(subor); // len vytvoríš prázdny súbor
+    let _writer = BufWriter::new(subor);
 
     open_and_wait(FILE_PATH);
 
     let mut song_id;
     loop {
         song_id = ask_song_id();
-        match song_manager
-            .get_all_songs()
-            .iter()
-            .find(|s| s.id == song_id)
-        {
-            Some(_) => show_error("Pesnicka s touto id exituje"),
-            None => break,
-        };
+        if song_manager.get_all_songs().iter().any(|s| s.id == song_id) {
+            show_error("Pesnicka s touto id exituje");
+        } else {
+            break;
+        }
     }
 
-    let typec = ask_song_type();
-    let vysledok_typ = match typec {
-        Some(r) => r,
-        None => vec![],
+    // predpoklad: ask_song_type() -> Option<TypPiesne>
+    let typ = match ask_song_type() {
+        Some(t) => t,
+        None => {
+            show_error("Musíš vybrať typ pesničky");
+            return;
+        }
     };
 
     let songa = SongJks {
         id: song_id,
         pocet_strof: 0,
         strofy: vec![],
-        typ_pesnicky: vysledok_typ,
+        typ_pesnicky: typ,
     };
 
     nacitaj_zo_suboru(song_manager, &songa);
@@ -97,27 +97,25 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
             Err(_) => continue,
         };
 
-        // Prázdny riadok = koniec strofy
         if line.trim().is_empty() {
             if !aktualne_riadky.is_empty() {
                 let text = aktualne_riadky.join("\n");
-                let cislo_strofy = nove_strofy.len() as i32; // 0,1,2,...
+                let cislo_strofy = nove_strofy.len() as i32;
 
                 let strofa = StrofaJKS {
                     id: songa_edit.id,
                     cislo_strofy,
+                    typ_piesne: Some(songa_edit.typ_pesnicky), // nový field
                     text,
                 };
                 nove_strofy.push(strofa);
                 aktualne_riadky.clear();
             }
         } else {
-            // stále sme v tej istej strofe
             aktualne_riadky.push(line);
         }
     }
 
-    // ak súbor nekončí prázdnym riadkom, ešte poslednú strofu uložiť
     if !aktualne_riadky.is_empty() {
         let text = aktualne_riadky.join("\n");
         let cislo_strofy = nove_strofy.len() as i32;
@@ -125,18 +123,18 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
         let strofa = StrofaJKS {
             id: songa_edit.id,
             cislo_strofy,
+            typ_piesne: Some(songa_edit.typ_pesnicky),
             text,
         };
         nove_strofy.push(strofa);
     }
 
-    // poskladáme novú SongJks
-    let pocet_strof = (nove_strofy.len() as i32) - 1; // ako u teba
+    let pocet_strof = (nove_strofy.len() as i32) - 1;
     let nova_songa = SongJks::new(
         songa_edit.id,
         pocet_strof,
         nove_strofy,
-        songa_edit.typ_pesnicky.clone(),
+        songa_edit.typ_pesnicky,
     );
 
     db_delete_song(songa_edit.id);

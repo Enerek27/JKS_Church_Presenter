@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::{app::App, popups::ask_song_type};
 
 pub mod app;
 pub mod event;
@@ -15,3 +15,9 @@ async fn main() -> color_eyre::Result<()> {
     ratatui::restore();
     result
 }
+
+/*
+fn main() {
+    ask_song_type();
+}
+    */

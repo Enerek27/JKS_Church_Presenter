@@ -1,113 +1,6 @@
-use std::sync::{Arc, Mutex};
-
-use eframe::egui::{self, Ui};
 use inputbox::InputBox;
 use native_dialog::DialogBuilder;
 use prehladavac_db_jks::library_jks::TypPiesne;
-
-pub struct GuiWrapper {
-    pub inner: AppGui,
-    pub result: Arc<Mutex<Option<Vec<TypPiesne>>>>,
-}
-
-impl eframe::App for GuiWrapper {
-    fn ui(&mut self, ctx: &mut Ui, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show_inside(ctx, |ui| self.inner.ui(ui));
-
-        if self.inner.is_finished() {
-            let res = self.inner.clone().result();
-            if let Ok(mut lock) = self.result.lock() {
-                *lock = res;
-            }
-            // zatvoriť okno v novom API
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct AppGui {
-    pub items: Vec<(TypPiesne, bool)>,
-    pub selected_index: usize,
-    pub done: bool,
-    pub cancelled: bool,
-}
-
-impl AppGui {
-    pub fn ui(&mut self, ui: &mut Ui) {
-        ui.heading("Vyber typy pesničky");
-
-        if !self.items.is_empty() && ui.input(|i| i.key_pressed(egui::Key::ArrowDown)) {
-            self.selected_index = (self.selected_index + 1).min(self.items.len() - 1);
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::ArrowUp)) {
-            self.selected_index = self.selected_index.saturating_sub(1);
-        }
-
-        if !self.items.is_empty() && ui.input(|i| i.key_pressed(egui::Key::Space)) {
-            let item = &mut self.items[self.selected_index];
-            item.1 = !item.1;
-        }
-
-        if ui.button("OK").clicked() {
-            self.done = true;
-        }
-
-        if ui.button("Cancel").clicked() {
-            self.cancelled = true;
-        }
-
-        for (i, (typ, selected)) in self.items.iter_mut().enumerate() {
-            let label = if *selected {
-                format!("✔ {}", typ)
-            } else {
-                format!("  {}", typ)
-            };
-
-            let response = ui.selectable_label(i == self.selected_index, label);
-
-            if response.clicked() {
-                *selected = !*selected;
-                self.selected_index = i;
-            }
-
-            if response.hovered() {
-                self.selected_index = i;
-            }
-        }
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            if ui.button("OK").clicked() {
-                self.done = true;
-            }
-
-            if ui.button("Cancel").clicked() {
-                self.cancelled = true;
-            }
-        });
-    }
-
-    pub fn is_finished(&self) -> bool {
-        self.done || self.cancelled
-    }
-
-    pub fn result(self) -> Option<Vec<TypPiesne>> {
-        if self.cancelled {
-            return None;
-        }
-
-        Some(
-            self.items
-                .into_iter()
-                .filter(|(_, selected)| *selected)
-                .map(|(t, _)| t)
-                .collect(),
-        )
-    }
-}
 
 pub fn show_error(msg: &str) {
     DialogBuilder::message()
@@ -161,33 +54,43 @@ pub fn send_yes_no_messege(msg: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub fn ask_song_type() -> Option<Vec<TypPiesne>> {
-    let options = TypPiesne::all(); // &'static [TypPiesne]
+pub fn ask_song_type() -> Option<TypPiesne> {
+    let all = TypPiesne::all();
 
-    let app = AppGui {
-        items: options.iter().copied().map(|t| (t, false)).collect(),
-        selected_index: 0,
-        done: false,
-        cancelled: false,
-    };
+    if all.is_empty() {
+        return None;
+    }
 
-    let result: Arc<Mutex<Option<Vec<TypPiesne>>>> = Arc::new(Mutex::new(None));
-    let result_clone = Arc::clone(&result);
+    loop {
+        // poskladaj text so zoznamom možností
+        let mut prompt = String::from("Vyber typ piesne (zadaj číslo):\n\n");
+        for (i, t) in all.iter().enumerate() {
+            prompt.push_str(&format!("{}: {}\n", i + 1, t.to_string()));
+        }
 
-    let _ = eframe::run_native(
-        "Vyber typy",
-        eframe::NativeOptions::default(),
-        Box::new(move |_cc| {
-            Ok::<Box<dyn eframe::App>, Box<dyn std::error::Error + Send + Sync>>(Box::new(
-                GuiWrapper {
-                    inner: app,
-                    result: result_clone,
-                },
-            ))
-        }),
-    );
+        let result = InputBox::new()
+            .title("Typ piesne")
+            .prompt(&prompt)
+            .show()
+            .unwrap();
 
-    Arc::try_unwrap(result)
-        .ok()
-        .and_then(|m| m.into_inner().ok().and_then(|r| r))
+        // používateľ zatvoril okno / stlačil Cancel
+        let Some(text) = result else {
+            return None;
+        };
+
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        match trimmed.parse::<usize>() {
+            Ok(n) if n >= 1 && n <= all.len() => {
+                return Some(all[n - 1]); // indexovanie od 0
+            }
+            _ => {
+                show_error("Zlé číslo typu piesne");
+            }
+        }
+    }
 }

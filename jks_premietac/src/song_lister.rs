@@ -2,14 +2,15 @@ use std::{collections::BTreeMap, fmt::Debug};
 
 use prehladavac_db_jks::{
     db::db_load_all,
-    library_jks::{SongJks, SongManager, StrofaJKS, TypPiesne},
+    library_jks::{JKSTypPiesne, SongJks, SongManager, TypPiesne},
 };
 use ratatui::widgets::ListState;
 use tui_tree_widget::{TreeItem, TreeState};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TreeId {
-    Folder(TypPiesne),
+    FolderTyp(TypPiesne), // koreňový priečinok (TypPiesne)
+    FolderJks(JKSTypPiesne),
     Song(i32),
 }
 
@@ -120,29 +121,70 @@ impl SongLister {
     }
 
     pub fn build_tree(&self) -> Vec<TreeItem<'static, TreeId>> {
-        let mut groups: BTreeMap<TypPiesne, Vec<&SongJks>> = BTreeMap::new();
+        // skupiny: ne-JKS typy -> piesne
+        let mut groups_non_jks: BTreeMap<TypPiesne, Vec<&SongJks>> = BTreeMap::new();
+        // skupiny: JKS podtypy -> piesne
+        let mut groups_jks: BTreeMap<JKSTypPiesne, Vec<&SongJks>> = BTreeMap::new();
 
         for song in self.search_get_formated() {
-            for typ in &song.typ_pesnicky {
-                groups.entry(*typ).or_default().push(song);
+            match song.typ_pesnicky {
+                TypPiesne::JKS(jks_typ) => {
+                    groups_jks.entry(jks_typ).or_default().push(song);
+                }
+                other => {
+                    groups_non_jks.entry(other).or_default().push(song);
+                }
             }
         }
 
-        groups
-            .into_iter()
-            .map(|(typ_enum, songs)| {
-                let typ_name: String = typ_enum.to_string();
+        let mut roots: Vec<TreeItem<'static, TreeId>> = Vec::new();
 
-                let children: Vec<TreeItem<'static, TreeId>> = songs
+        // 1) Ne-JKS typy: FolderTyp -> Song
+        for (typ_enum, songs) in groups_non_jks {
+            let typ_name: String = typ_enum.to_string();
+
+            let children: Vec<TreeItem<'static, TreeId>> = songs
+                .into_iter()
+                .map(|song| {
+                    TreeItem::new_leaf(TreeId::Song(song.id), song.format_song().to_string())
+                })
+                .collect();
+
+            roots.push(TreeItem::new(TreeId::FolderTyp(typ_enum), typ_name, children).unwrap());
+        }
+
+        // 2) JKS typ: koreň "JKS" s podpriečinkami pre každý JKSTypPiesne
+        if !groups_jks.is_empty() {
+            let mut jks_children: Vec<TreeItem<'static, TreeId>> = Vec::new();
+
+            for (jks_typ, songs) in groups_jks {
+                let jks_name = jks_typ.to_string(); // Display pre JKSTypPiesne
+
+                let song_children: Vec<TreeItem<'static, TreeId>> = songs
                     .into_iter()
                     .map(|song| {
                         TreeItem::new_leaf(TreeId::Song(song.id), song.format_song().to_string())
                     })
                     .collect();
 
-                TreeItem::new(TreeId::Folder(typ_enum), typ_name, children).unwrap()
-            })
-            .collect()
+                jks_children.push(
+                    TreeItem::new(TreeId::FolderJks(jks_typ), jks_name, song_children).unwrap(),
+                );
+            }
+
+            // koreňový uzol pre všetky JKS piesne
+            roots.push(
+                TreeItem::new(
+                    // konkrétny enum je použité len ako identifikátor
+                    TreeId::FolderTyp(TypPiesne::JKS(JKSTypPiesne::Advent)),
+                    "JKS".to_string(),
+                    jks_children,
+                )
+                .unwrap(),
+            );
+        }
+
+        roots
     }
 
     pub fn select_next(&mut self) {

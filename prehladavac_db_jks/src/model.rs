@@ -1,59 +1,42 @@
-use diesel::prelude::*;
+use diesel::{deserialize::Queryable, prelude::Insertable};
 
-use crate::{
-    library_jks::{SongJks, StrofaJKS},
-    schema::song_types,
-};
+use crate::library_jks::{StrofaJKS, TypPiesne};
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Queryable, Insertable)]
 #[diesel(table_name = crate::schema::jks)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct JksStrofaDB {
     pub row_id: Option<i32>,
     pub id: i32,
     pub cislo_stofy: i32,
+    pub typ_piesne: Option<String>, // Nullable<Text> → Option<String>
     pub text: String,
 }
 
 impl From<&StrofaJKS> for JksStrofaDB {
-    fn from(value: &StrofaJKS) -> Self {
+    fn from(s: &StrofaJKS) -> Self {
         JksStrofaDB {
             row_id: None,
-            id: value.id,
-            cislo_stofy: value.cislo_strofy,
-            text: value.text.clone(),
+            id: s.id,
+            cislo_stofy: s.cislo_strofy,
+            typ_piesne: s.typ_piesne.as_ref().map(|t| t.to_string()),
+            text: s.text.clone(),
         }
     }
 }
 
 impl From<&JksStrofaDB> for StrofaJKS {
-    fn from(value: &JksStrofaDB) -> Self {
+    fn from(db: &JksStrofaDB) -> Self {
+        let typ_piesne = db
+            .typ_piesne
+            .as_ref()
+            .and_then(|s| TypPiesne::from_str_db(s));
+
         StrofaJKS {
-            id: value.id,
-            cislo_strofy: value.cislo_stofy,
-            text: value.text.clone(),
+            id: db.id,
+            cislo_strofy: db.cislo_stofy,
+            typ_piesne,
+            text: db.text.clone(),
         }
     }
-}
-
-#[derive(Queryable, Selectable)]
-#[diesel(table_name = crate::schema::song_types)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub struct SongTypeDB {
-    pub id: Option<i32>, // Nullable<Integer>
-    pub name: String,    // Text
-}
-
-#[derive(Queryable)]
-#[diesel(table_name = crate::schema::jks_types)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub struct JksTypeDB {
-    pub song_id: i32,
-    pub type_id: i32,
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = song_types)]
-pub struct NewSongTypeDB {
-    pub name: String,
 }
