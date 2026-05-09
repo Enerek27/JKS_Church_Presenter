@@ -1,7 +1,7 @@
 #[cfg(target_os = "windows")]
 use std::process::Command;
 use std::{
-    fs::{remove_file, File},
+    fs::{File, remove_file},
     io::{BufRead, BufReader, BufWriter, Write},
 };
 
@@ -78,9 +78,7 @@ pub fn fo_open_to_edit_song(songa: &SongJks, song_manager: &mut SongManager) {
         writer
             .write(line.as_bytes())
             .expect("Chyba zapisu do suboru");
-        writer
-            .write(b"\n\n")
-            .expect("Chyba zápisu noveho riadka");
+        writer.write(b"\n\n").expect("Chyba zápisu noveho riadka");
     }
     writer.flush().expect("Chyba pri flushnuti");
 

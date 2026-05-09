@@ -1,6 +1,6 @@
 use std::env;
 
-use monitor_lib::monitor_lib::{load_monitor_geometry, MonitorGeometry};
+use monitor_lib::monitor_lib::{MonitorGeometry, load_monitor_geometry};
 
 use crate::{gui::run_gui, initializer::init_song_manager};
 

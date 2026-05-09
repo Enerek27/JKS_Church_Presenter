@@ -18,17 +18,12 @@ use crate::{
 
 /// Vytvorí pripojenie k SQLite databáze podľa premennej prostredia `DATABASE_URL`.
 pub fn establish_connection() -> SqliteConnection {
-    
-
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
         // Fallback: ./jks.sqlite vedľa aktuálneho exe
-        let exe_path =
-            std::env::current_exe().expect("Failed to get path to current executable");
+        let exe_path = std::env::current_exe().expect("Failed to get path to current executable");
         let base_dir = exe_path
-            .parent()
-            .unwrap_or_else(|| std::path::Path::new("."))
             .parent()
             .unwrap_or_else(|| std::path::Path::new("."));
         let default_path: PathBuf = base_dir.join("jks.db");

@@ -1,6 +1,6 @@
 /// Pomocné typy a funkcie na výber monitora a uloženie jeho geometrie.
 pub mod monitor_lib {
-    use std::fs::{remove_file, File};
+    use std::fs::{File, remove_file};
     use std::path::Path;
 
     use inputbox::InputBox;

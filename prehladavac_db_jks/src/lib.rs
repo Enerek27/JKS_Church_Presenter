@@ -6,7 +6,7 @@ pub mod schema;
 pub mod library_jks {
     use std::{
         fmt::{Display, Formatter},
-        fs::{remove_file, File},
+        fs::{File, remove_file},
         io::{BufReader, BufWriter},
     };
 
@@ -304,8 +304,7 @@ pub mod library_jks {
             let file = File::open(path).expect("Chyba pri otváraní súboru pre načítanie manažéra");
             let reader = BufReader::new(file);
 
-            let ret =
-                serde_json::from_reader(reader).expect("Chyba pri deserializácii manažéra");
+            let ret = serde_json::from_reader(reader).expect("Chyba pri deserializácii manažéra");
             remove_file(path).expect("Subor po manažérovi sa nepodarilo odstrániť");
             ret
         }
