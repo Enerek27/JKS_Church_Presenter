@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::env;
+use std::path::PathBuf;
 
 use diesel::{Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 use dotenvy::dotenv;
@@ -17,9 +18,23 @@ use crate::{
 
 /// Vytvorí pripojenie k SQLite databáze podľa premennej prostredia `DATABASE_URL`.
 pub fn establish_connection() -> SqliteConnection {
+    
+
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
+        // Fallback: ./jks.sqlite vedľa aktuálneho exe
+        let exe_path =
+            std::env::current_exe().expect("Failed to get path to current executable");
+        let base_dir = exe_path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."));
+        let default_path: PathBuf = base_dir.join("jks.db");
+        default_path.to_string_lossy().to_string()
+    });
+
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
