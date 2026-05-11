@@ -178,20 +178,23 @@ Controls in the presenter window:
 
 Basic setup:
 
-1. Install Rust and Cargo.
-2. Set `DATABASE_URL` for SQLite:
-   ```bash
-   export DATABASE_URL=./jks.sqlite
-   ```
-3. (Optional) Run the CSV import tool once to populate the database.
-4. Build and run:
+### Windows
 
-```bash
-# Build all binaries
-cargo build --release
+1. Just run install_win.bat
 
-# Run main TUI application
-cargo run -p jks_premietac
-```
+### Linux
 
-The presenter (`tvoric_platna`) and monitor selector are started from inside the TUI based on the current executable path.
+1. Just run install.sh script
+
+
+## Uninstall
+
+Basic uninstall:
+
+### Windows 
+
+1. Run uninnstall_win.bat 
+
+### Linux
+
+1. Run uninnstall.sh script
