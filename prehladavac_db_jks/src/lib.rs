@@ -30,6 +30,9 @@ pub mod library_jks {
         Taize,
         Mladeznicka,
         Hymna,
+        Zalm,
+        Responz,
+
     }
 
     /// Podtypy JKS pesničiek podľa liturgickej kategórie.
@@ -55,17 +58,23 @@ pub mod library_jks {
         Kajuce,
         PiesnePrilezitostne,
         PredPozehnanim,
+        Ofertorium,
+        
     }
 
     impl TypPiesne {
         /// Vytvorí typ pesničky z textu tak, ako je uložený v databáze.
         pub fn from_str_db(name: &str) -> Option<Self> {
             match name {
+                "Žalm" => Some(TypPiesne::Zalm),
                 "Antifona Šurin" => Some(TypPiesne::AntifonaSurin),
                 "Mládežnícka" => Some(TypPiesne::Mladeznicka),
                 "Hymna" => Some(TypPiesne::Hymna),
                 "Antifona" => Some(TypPiesne::Antifona),
                 "Taize" => Some(TypPiesne::Taize),
+                "Responz" => Some(TypPiesne::Responz),
+
+                "Ofertórium" => Some(TypPiesne::JKS(JKSTypPiesne::Ofertorium)),
 
                 "Advent" => Some(TypPiesne::JKS(JKSTypPiesne::Advent)),
                 "Vianoce" => Some(TypPiesne::JKS(JKSTypPiesne::Vianoce)),
@@ -108,6 +117,8 @@ pub mod library_jks {
                 TypPiesne::Taize,
                 TypPiesne::Mladeznicka,
                 TypPiesne::Hymna,
+                TypPiesne::Zalm,
+                TypPiesne::Responz,
                 TypPiesne::JKS(JKSTypPiesne::Advent),
                 TypPiesne::JKS(JKSTypPiesne::Vianoce),
                 TypPiesne::JKS(JKSTypPiesne::KNajsvMenuJezisovmu),
@@ -128,6 +139,7 @@ pub mod library_jks {
                 TypPiesne::JKS(JKSTypPiesne::Kajuce),
                 TypPiesne::JKS(JKSTypPiesne::PiesnePrilezitostne),
                 TypPiesne::JKS(JKSTypPiesne::PredPozehnanim),
+                TypPiesne::JKS(JKSTypPiesne::Ofertorium),
             ]
         }
     }
@@ -140,6 +152,8 @@ pub mod library_jks {
                 TypPiesne::Hymna => "Hymna",
                 TypPiesne::Antifona => "Antifona",
                 TypPiesne::Taize => "Taize",
+                TypPiesne::Zalm => "Žalm",
+                TypPiesne::Responz => "Responz",
                 TypPiesne::JKS(jkstyp_piesne) => match jkstyp_piesne {
                     JKSTypPiesne::Advent => "Advent",
                     JKSTypPiesne::Vianoce => "Vianoce",
@@ -161,7 +175,9 @@ pub mod library_jks {
                     JKSTypPiesne::Kajuce => "Kajúce",
                     JKSTypPiesne::PiesnePrilezitostne => "Príležitostné piesne",
                     JKSTypPiesne::PredPozehnanim => "Pred požehnaním",
+                    JKSTypPiesne::Ofertorium => "Ofertórium",
                 },
+                
             };
             write!(f, "{}", navrat)
         }
@@ -190,6 +206,7 @@ pub mod library_jks {
                 JKSTypPiesne::Kajuce => "Kajúce",
                 JKSTypPiesne::PiesnePrilezitostne => "Príležitostné piesne",
                 JKSTypPiesne::PredPozehnanim => "Pred požehnaním",
+                JKSTypPiesne::Ofertorium => "Ofertórium",
             };
             write!(f, "{}", navrat)
         }

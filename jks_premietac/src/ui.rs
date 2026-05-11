@@ -7,13 +7,68 @@ use ratatui::{
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 use crate::{
-    app::{App, FocusedWidget},
-    song_lister::TreeId,
+    app::{App, FocusedWidget}, dominikani_logo::ASCII_LOGO, song_lister::TreeId
 };
 
+// Tmavý theme.
+const COLOR_BG: Color = Color::Rgb(18, 18, 24);          // hlavné pozadie
+const COLOR_PANEL_BG: Color = Color::Rgb(24, 24, 32);    // panely
+const COLOR_PANEL_BORDER: Color = Color::Rgb(80, 80, 110);
+const COLOR_PANEL_BORDER_FOCUS: Color = Color::Rgb(120, 170, 255);
+const COLOR_SEARCH_BG: Color = Color::Rgb(32, 32, 48);
+const COLOR_SELECTED_BG: Color = Color::Rgb(50, 90, 160);
+const COLOR_SELECTED_FG: Color = Color::White;
+const COLOR_HELP_BG: Color = Color::Rgb(30, 30, 40);
+const COLOR_HELP_FG: Color = Color::Rgb(220, 220, 230);
+
 const SELECTED: Style = Style::new()
-    .bg(Color::LightMagenta)
+    .bg(COLOR_SELECTED_BG)
+    .fg(COLOR_SELECTED_FG)
     .add_modifier(Modifier::BOLD);
+
+fn render_ascii_background(area: Rect, buf: &mut Buffer) {
+    let lines: Vec<&str> = ASCII_LOGO.lines().collect();
+    if lines.is_empty() {
+        return;
+    }
+
+    let logo_height = lines.len() as u16;
+    let logo_width = lines
+        .iter()
+        .map(|l| l.chars().count() as u16)
+        .max()
+        .unwrap_or(0);
+
+    // stred obrazovky
+    let center_x = area.left() + area.width / 2;
+    let center_y = area.top() + area.height / 2;
+
+    // ľavý horný roh loga
+    let start_x = center_x.saturating_sub(logo_width / 2);
+    let start_y = center_y.saturating_sub(logo_height / 2);
+
+    for (row, line) in lines.iter().enumerate() {
+        let y = start_y + row as u16;
+        if y >= area.bottom() {
+            break;
+        }
+
+        for (col, ch) in line.chars().enumerate() {
+            let x = start_x + col as u16;
+            if x >= area.right() {
+                break;
+            }
+
+            let cell = &mut buf[(x, y)];
+            // Jemný, nenápadný text v pozadí
+            cell.set_fg(Color::Rgb(60, 60, 80));
+            cell.set_bg(COLOR_BG);
+            cell.set_symbol(&ch.to_string());
+        }
+    }
+}
+
+
 
 fn render_left_tree(
     state: &mut TreeState<TreeId>,
@@ -35,64 +90,94 @@ fn render_left_tree(
 impl App {
     /// Renderuje ľavý panel so stromom piesní a vyhľadávacím riadkom.
     pub fn render_left(&mut self, area: Rect, buf: &mut Buffer) {
+          // vyplň pozadie panela
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                buf[(x, y)].set_bg(COLOR_PANEL_BG);
+            }
+        }
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(4), Constraint::Min(0)])
+            .constraints([Constraint::Length(3), Constraint::Min(0)])
             .split(area);
 
-        let search_text_value = self.song_lister.search.clone();
+        let search_area = chunks[0];
+        let list_area = chunks[1];
+
+        let search_text = self.song_lister.search.clone();
         let items: Vec<TreeItem<'static, TreeId>> = self.song_lister.build_tree();
 
-        let highlight_search = if self.focusing_widget == FocusedWidget::Search {
-            Style::new().bg(Color::LightCyan)
-        } else {
-            Style::new()
-        };
-
-        let search_bar = Block::bordered()
+        
+        let mut search_block = Block::bordered()
             .title("Hľadaj")
-            .border_style(highlight_search)
-            .border_type(BorderType::Rounded);
+            .title_alignment(Alignment::Left)
+            .border_type(BorderType::Rounded)
+            .style(Style::new().bg(COLOR_PANEL_BG))
+            .border_style(Style::new().fg(COLOR_PANEL_BORDER));
 
-        let search_paragraph = Paragraph::new(search_text_value).block(search_bar);
-        search_paragraph.render(chunks[0], buf);
+        
+        if self.focusing_widget == FocusedWidget::Search {
+            search_block = search_block.border_style(Style::new().fg(COLOR_PANEL_BORDER_FOCUS));
+        }
+
+        Paragraph::new(search_text)
+            .block(search_block)
+            .style(
+                Style::new()
+                    .fg(Color::White)
+                    .bg(COLOR_PANEL_BG),
+            )
+            .alignment(Alignment::Left)
+            .render(search_area, buf);
+       
 
         let mut border = Block::bordered()
             .title("Pesničky v databáze")
             .title_alignment(Alignment::Center)
-            .border_type(BorderType::Rounded);
+            .border_type(BorderType::Rounded)
+            .style(Style::new().bg(COLOR_PANEL_BG))
+            .border_style(Style::new().fg(COLOR_PANEL_BORDER));
 
         if self.focusing_widget == FocusedWidget::Left {
-            border = border.border_style(Style::new().bg(Color::LightCyan));
+            border = border.border_style(Style::new().fg(COLOR_PANEL_BORDER_FOCUS));
         }
 
         let highlight_style = if self.focusing_widget == FocusedWidget::Left {
             SELECTED
         } else {
-            Style::new()
+            Style::new().bg(COLOR_PANEL_BG).fg(Color::White)
         };
 
-        let state: &mut TreeState<TreeId> = &mut self.song_lister.state;
-        render_left_tree(state, &items, chunks[1], buf, border, highlight_style);
+        render_left_tree(&mut self.song_lister.state, &items, list_area, buf, border, highlight_style);
     }
 
     /// Renderuje pravý panel so zoznamom vybraných piesní na premietanie.
     pub fn render_right(&mut self, area: Rect, buf: &mut Buffer) {
+        // vyplň pozadie panela
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                buf[(x, y)].set_bg(COLOR_PANEL_BG);
+            }
+        }
+
         let items: Vec<ListItem> = self
             .selected_song_lister
             .song_manager
             .get_format_all()
             .into_iter()
-            .map(ListItem::new)
+            .map(|s| ListItem::new(s).style(Style::new().fg(Color::White)))
             .collect();
 
         let mut border = Block::bordered()
             .title("Premietanie")
             .title_alignment(Alignment::Center)
-            .border_type(BorderType::Rounded);
+            .border_type(BorderType::Rounded)
+            .style(Style::new().bg(COLOR_PANEL_BG))
+            .border_style(Style::new().fg(COLOR_PANEL_BORDER));
 
         if self.focusing_widget == FocusedWidget::Right {
-            border = border.border_style(Style::new().bg(Color::LightCyan));
+            border = border.border_style(Style::new().fg(COLOR_PANEL_BORDER_FOCUS));
         }
 
         if self.selected_song_lister.state.selected().is_none()
@@ -104,7 +189,7 @@ impl App {
         let highlight_style = if self.focusing_widget == FocusedWidget::Right {
             SELECTED
         } else {
-            Style::new()
+            Style::new().bg(COLOR_PANEL_BG).fg(Color::White)
         };
 
         let song_list = List::new(items)
@@ -130,37 +215,49 @@ impl App {
             }
         };
 
-        let para = Paragraph::new(text)
+        Paragraph::new(text)
             .style(
                 Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Gray)
+                    .fg(COLOR_HELP_FG)
+                    .bg(COLOR_HELP_BG)
                     .add_modifier(Modifier::BOLD),
             )
-            .alignment(Alignment::Left);
-
-        para.render(area, buf);
+            .alignment(Alignment::Left)
+            .render(area, buf);
     }
 }
 
 impl Widget for &mut App {
     /// Hlavný vstup na vykreslenie celej aplikácie do terminálu.
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let outer = Layout::default()
+        // globálne pozadie
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                buf[(x, y)].set_bg(COLOR_BG);
+            }
+        }
+
+        render_ascii_background(area, buf);
+
+
+        let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(1)])
             .split(area);
 
-        let content_area = outer[0];
-        let help_area = outer[1];
+        let content_area = chunks[0];
+        let help_area = chunks[1];
 
         let main_split = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(content_area);
 
-        self.render_left(main_split[0], buf);
-        self.render_right(main_split[1], buf);
+        let left_area = main_split[0];
+        let right_area = main_split[1];
+
+        self.render_left(left_area, buf);
+        self.render_right(right_area, buf);
         self.render_help_bar(help_area, buf);
     }
 }

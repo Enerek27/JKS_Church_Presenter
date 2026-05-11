@@ -6,6 +6,7 @@ pub mod file_opener;
 pub mod popups;
 pub mod song_lister;
 pub mod ui;
+pub mod dominikani_logo;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
