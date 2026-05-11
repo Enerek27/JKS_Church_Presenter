@@ -21,19 +21,19 @@ echo "==> Detekujem distribúciu a inštalujem systémové závislosti..."
 if command -v apt >/dev/null 2>&1; then
   # Debian / Ubuntu / Mint ...
   sudo apt update
-  sudo apt install -y build-essential pkg-config libsqlite3-dev sqlite3 curl
+  sudo apt install -y build-essential pkg-config libsqlite3-dev sqlite3 curl mousepad
 
 elif command -v dnf >/dev/null 2>&1; then
   # Fedora / RHEL / CentOS Stream
-  sudo dnf install -y gcc make pkgconfig sqlite sqlite-devel curl
+  sudo dnf install -y gcc make pkgconfig sqlite sqlite-devel curl mousepad
 
 elif command -v pacman >/dev/null 2>&1; then
   # Arch / Manjaro
-  sudo pacman -Sy --needed base-devel sqlite sqlite3 curl
+  sudo pacman -Sy --needed base-devel sqlite sqlite3 curl mousepad
 
 elif command -v zypper >/dev/null 2>&1; then
   # openSUSE
-  sudo zypper install -y gcc make pkg-config sqlite3 sqlite3-devel curl
+  sudo zypper install -y gcc make pkg-config sqlite3 sqlite3-devel curl mousepad
 
 else
   echo "!! Nepodporovaný balíčkovací systém."
