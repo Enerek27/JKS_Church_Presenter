@@ -310,7 +310,7 @@ impl App {
         match status {
             Ok(exit_status) => {
                 if exit_status.success() {
-                    println!("monitor selector OK");
+                    //println!("monitor selector OK");
                 } else {
                     println!("monitor selector s chybou: {:?}", exit_status);
                 }
@@ -330,7 +330,7 @@ impl App {
         match status {
             Ok(exit_status) => {
                 if exit_status.success() {
-                    println!("Presenter skončil OK");
+                    //println!("Presenter skončil OK");
                 } else {
                     println!("Presenter skončil s chybou: {:?}", exit_status);
                 }

@@ -167,7 +167,7 @@ impl eframe::App for SongScreenApp {
                 }
 
                 // Ďalšia pesnička (prvá strofa).
-                if i.key_pressed(egui::Key::ArrowUp) {
+                if i.key_pressed(egui::Key::ArrowDown) {
                     if self.song_idx + 1 < self.manager.piesne.len() {
                         self.song_idx += 1;
                         self.strofa_idx = 0;
@@ -176,7 +176,7 @@ impl eframe::App for SongScreenApp {
                 }
 
                 // Predchádzajúca pesnička (prvá strofa).
-                if i.key_pressed(egui::Key::ArrowDown) {
+                if i.key_pressed(egui::Key::ArrowUp) {
                     if self.song_idx > 0 {
                         self.song_idx -= 1;
                         self.strofa_idx = 0;
