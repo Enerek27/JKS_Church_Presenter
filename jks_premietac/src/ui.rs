@@ -7,12 +7,14 @@ use ratatui::{
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 use crate::{
-    app::{App, FocusedWidget}, dominikani_logo::ASCII_LOGO, song_lister::TreeId
+    app::{App, FocusedWidget},
+    dominikani_logo::ASCII_LOGO,
+    song_lister::TreeId,
 };
 
 // Tmavý theme.
-const COLOR_BG: Color = Color::Rgb(18, 18, 24);          // hlavné pozadie
-const COLOR_PANEL_BG: Color = Color::Rgb(24, 24, 32);    // panely
+const COLOR_BG: Color = Color::Rgb(18, 18, 24); // hlavné pozadie
+const COLOR_PANEL_BG: Color = Color::Rgb(24, 24, 32); // panely
 const COLOR_PANEL_BORDER: Color = Color::Rgb(80, 80, 110);
 const COLOR_PANEL_BORDER_FOCUS: Color = Color::Rgb(120, 170, 255);
 const COLOR_SEARCH_BG: Color = Color::Rgb(32, 32, 48);
@@ -68,8 +70,6 @@ fn render_ascii_background(area: Rect, buf: &mut Buffer) {
     }
 }
 
-
-
 fn render_left_tree(
     state: &mut TreeState<TreeId>,
     items: &[TreeItem<'static, TreeId>],
@@ -90,7 +90,7 @@ fn render_left_tree(
 impl App {
     /// Renderuje ľavý panel so stromom piesní a vyhľadávacím riadkom.
     pub fn render_left(&mut self, area: Rect, buf: &mut Buffer) {
-          // vyplň pozadie panela
+        // vyplň pozadie panela
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
                 buf[(x, y)].set_bg(COLOR_PANEL_BG);
@@ -108,7 +108,6 @@ impl App {
         let search_text = self.song_lister.search.clone();
         let items: Vec<TreeItem<'static, TreeId>> = self.song_lister.build_tree();
 
-        
         let mut search_block = Block::bordered()
             .title("Hľadaj")
             .title_alignment(Alignment::Left)
@@ -116,21 +115,15 @@ impl App {
             .style(Style::new().bg(COLOR_PANEL_BG))
             .border_style(Style::new().fg(COLOR_PANEL_BORDER));
 
-        
         if self.focusing_widget == FocusedWidget::Search {
             search_block = search_block.border_style(Style::new().fg(COLOR_PANEL_BORDER_FOCUS));
         }
 
         Paragraph::new(search_text)
             .block(search_block)
-            .style(
-                Style::new()
-                    .fg(Color::White)
-                    .bg(COLOR_PANEL_BG),
-            )
+            .style(Style::new().fg(Color::White).bg(COLOR_PANEL_BG))
             .alignment(Alignment::Left)
             .render(search_area, buf);
-       
 
         let mut border = Block::bordered()
             .title("Pesničky v databáze")
@@ -149,7 +142,14 @@ impl App {
             Style::new().bg(COLOR_PANEL_BG).fg(Color::White)
         };
 
-        render_left_tree(&mut self.song_lister.state, &items, list_area, buf, border, highlight_style);
+        render_left_tree(
+            &mut self.song_lister.state,
+            &items,
+            list_area,
+            buf,
+            border,
+            highlight_style,
+        );
     }
 
     /// Renderuje pravý panel so zoznamom vybraných piesní na premietanie.
@@ -238,7 +238,6 @@ impl Widget for &mut App {
         }
 
         render_ascii_background(area, buf);
-
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)

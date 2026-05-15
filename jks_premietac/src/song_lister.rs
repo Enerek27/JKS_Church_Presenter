@@ -15,7 +15,7 @@ pub enum TreeId {
     /// Podpriečinok pre konkrétny JKS podtyp.
     FolderJks(JKSTypPiesne),
     /// Konkrétna pesnička podľa jej ID.
-    Song(i32),
+    Song(TypPiesne, i32),
 }
 
 /// Jednoduchý lineárny zoznam piesní s výberom.
@@ -155,7 +155,10 @@ impl SongLister {
             let children: Vec<TreeItem<'static, TreeId>> = songs
                 .into_iter()
                 .map(|song| {
-                    TreeItem::new_leaf(TreeId::Song(song.id), song.format_song().to_string())
+                    TreeItem::new_leaf(
+                        TreeId::Song(typ_enum.clone(), song.id),
+                        song.format_song().to_string(),
+                    )
                 })
                 .collect();
 
@@ -172,7 +175,10 @@ impl SongLister {
                 let song_children: Vec<TreeItem<'static, TreeId>> = songs
                     .into_iter()
                     .map(|song| {
-                        TreeItem::new_leaf(TreeId::Song(song.id), song.format_song().to_string())
+                        TreeItem::new_leaf(
+                            TreeId::Song(TypPiesne::JKS(jks_typ.clone()), song.id),
+                            song.format_song().to_string(),
+                        )
                     })
                     .collect();
 

@@ -10,6 +10,7 @@ use crate::{
 };
 
 use crossterm::event::{KeyCode, KeyEvent};
+use prehladavac_db_jks::library_jks::TypPiesne;
 use ratatui::DefaultTerminal;
 
 #[derive(Debug, PartialEq)]
@@ -179,19 +180,19 @@ impl App {
             return;
         }
 
-        let song_id = match self.get_selected_song_id() {
+        let (typ_pesnicky,song_id) = match self.get_selected_song_id() {
             Some(id) => id,
             None => return,
         };
 
-        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id) {
+        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id, typ_pesnicky) {
             self.selected_song_lister
                 .song_manager
                 .add_song(song.clone());
         }
     }
 
-    fn get_selected_song_id(&self) -> Option<i32> {
+    fn get_selected_song_id(&self) -> Option<(TypPiesne, i32)> {
         // selected() -> &[TreeId]
         let selected_path = self.song_lister.state.selected();
 
@@ -202,7 +203,7 @@ impl App {
         };
 
         match last {
-            TreeId::Song(id) => Some(*id),
+            TreeId::Song(typ, id) => Some((typ.clone(), *id)),
             _ => None,
         }
     }
@@ -234,12 +235,12 @@ impl App {
             return;
         }
 
-        let song_id = match self.get_selected_song_id() {
+        let (typ_pesnicky, song_id) = match self.get_selected_song_id() {
             Some(id) => id,
             None => return,
         };
 
-        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id) {
+        if let Some(song) = self.song_lister.song_manager.get_song_by_id(song_id, typ_pesnicky) {
             let copy = song.clone();
 
             fo_open_to_edit_song(&copy, &mut self.song_lister.song_manager);
@@ -258,12 +259,12 @@ impl App {
             return;
         }
 
-        let song_id = match self.get_selected_song_id() {
+        let (typ_pesnicky,song_id) = match self.get_selected_song_id() {
             Some(id) => id,
             None => return,
         };
 
-        let song = match self.song_lister.song_manager.get_song_by_id(song_id) {
+        let song = match self.song_lister.song_manager.get_song_by_id(song_id, typ_pesnicky) {
             Some(s) => s.clone(),
             None => return,
         };

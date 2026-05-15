@@ -7,12 +7,36 @@ use std::{
 
 use prehladavac_db_jks::{
     db::{db_delete_song, db_insert_song},
-    library_jks::{SongJks, SongManager, StrofaJKS},
+    library_jks::{JKSTypPiesne, SongJks, SongManager, StrofaJKS, TypPiesne},
 };
 
 use crate::popups::{ask_song_id, ask_song_type, send_yes_no_messege, show_error};
 
 const FILE_PATH: &str = "./upravujem_text.txt";
+
+fn song_id_existing(typ_piesne: TypPiesne, song_manager: &SongManager, song_id: i32) -> bool {
+    if matches!(typ_piesne, TypPiesne::JKS(_)) {
+        match song_manager
+            .get_all_songs()
+            .iter()
+            .filter(|s| matches!(s.typ_pesnicky, TypPiesne::JKS(_)))
+            .find(|s| s.id == song_id)
+        {
+            Some(_) => true,
+            None => false,
+        }
+    } else {
+        match song_manager
+            .get_all_songs()
+            .iter()
+            .filter(|s| s.typ_pesnicky == typ_piesne)
+            .find(|s| s.id == song_id)
+        {
+            Some(_) => true,
+            None => false,
+        }
+    }
+}
 
 /// Odstráni pesničku z databázy aj z `SongManager` po potvrdení používateľom.
 pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks) {
@@ -24,8 +48,8 @@ pub fn fo_delete_song(song_manager: &mut SongManager, song_for_delete: &SongJks)
         return;
     };
 
-    db_delete_song(song_for_delete.id);
-    song_manager.remove_song_by_id(song_for_delete.id);
+    db_delete_song(song_for_delete.id, song_for_delete.typ_pesnicky);
+    song_manager.remove_song_by_id(song_for_delete.id, song_for_delete.typ_pesnicky);
 }
 
 /// Vytvorí novú pesničku tak, že otvorí dočasný textový súbor v editore,
@@ -36,16 +60,6 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
 
     open_and_wait(FILE_PATH);
 
-    let mut song_id;
-    loop {
-        song_id = ask_song_id();
-        if song_manager.get_all_songs().iter().any(|s| s.id == song_id) {
-            show_error("Pesnicka s touto id exituje");
-        } else {
-            break;
-        }
-    }
-
     let typ = match ask_song_type() {
         Some(t) => t,
         None => {
@@ -53,6 +67,17 @@ pub fn fo_add_song(song_manager: &mut SongManager) {
             return;
         }
     };
+
+    let mut song_id;
+    loop {
+        song_id = ask_song_id();
+
+        if song_id_existing(typ, song_manager, song_id) {
+            show_error("Pesnicka s touto id exituje");
+        } else {
+            break;
+        }
+    }
 
     let songa = SongJks {
         id: song_id,
@@ -142,8 +167,8 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
         songa_edit.typ_pesnicky,
     );
 
-    db_delete_song(songa_edit.id);
-    song_manager.remove_song_by_id(songa_edit.id);
+    db_delete_song(songa_edit.id, songa_edit.typ_pesnicky);
+    song_manager.remove_song_by_id(songa_edit.id, songa_edit.typ_pesnicky);
     db_insert_song(&nova_songa);
     song_manager.add_song(nova_songa);
 }

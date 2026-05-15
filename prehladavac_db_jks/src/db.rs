@@ -10,7 +10,7 @@ use dotenvy::dotenv;
 use crate::library_jks::TypPiesne;
 use crate::schema;
 use crate::schema::jks::dsl::jks;
-use crate::schema::jks::id;
+use crate::schema::jks::{cislo_stofy, id, row_id, typ_piesne};
 use crate::{
     library_jks::{SongJks, SongManager, StrofaJKS},
     model::JksStrofaDB,
@@ -65,10 +65,38 @@ pub fn db_insert_song(song: &SongJks) {
 }
 
 /// Zmaže všetky strofy pesničky s daným číslom z databázy.
-pub fn db_delete_song(cislo_piesne: i32) {
+pub fn db_delete_song(cislo_piesne: i32, typ_piesn: TypPiesne) {
     let conn = &mut establish_connection();
+    let type_str = typ_piesn.to_string();
 
-    let _ = diesel::delete(jks.filter(id.eq(cislo_piesne))).execute(conn);
+    let zaciatok: i32 = match jks
+        .filter(id.eq(cislo_piesne))
+        .filter(cislo_stofy.eq(0))
+        .filter(typ_piesne.eq(&type_str))
+        .select(row_id)
+        .first::<Option<i32>>(conn)
+        .ok()
+        .flatten()
+    {
+        Some(r) => r,
+        None => return,
+    };
+
+    let koniec: i32 = jks
+        .filter(cislo_stofy.eq(0))
+        .filter(row_id.gt(Some(zaciatok)))
+        .select(row_id)
+        .order(row_id.asc())
+        .first::<Option<i32>>(conn)
+        .ok()
+        .flatten()
+        .unwrap_or(i32::MAX);
+
+    let _ = diesel::delete(
+        jks.filter(row_id.ge(Some(zaciatok)))
+            .filter(row_id.lt(Some(koniec))),
+    )
+    .execute(conn);
 }
 
 /// Načíta všetky pesničky z databázy a vráti ich v `SongManager`.

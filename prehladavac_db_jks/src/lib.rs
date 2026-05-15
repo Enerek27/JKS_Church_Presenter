@@ -12,6 +12,10 @@ pub mod library_jks {
 
     use serde::{Deserialize, Serialize};
 
+
+
+
+
     /// Jedna strofa JKS pesničky uložená v pamäti.
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct StrofaJKS {
@@ -32,7 +36,6 @@ pub mod library_jks {
         Hymna,
         Zalm,
         Responz,
-
     }
 
     /// Podtypy JKS pesničiek podľa liturgickej kategórie.
@@ -59,7 +62,6 @@ pub mod library_jks {
         PiesnePrilezitostne,
         PredPozehnanim,
         Ofertorium,
-        
     }
 
     impl TypPiesne {
@@ -177,7 +179,6 @@ pub mod library_jks {
                     JKSTypPiesne::PredPozehnanim => "Pred požehnaním",
                     JKSTypPiesne::Ofertorium => "Ofertórium",
                 },
-                
             };
             write!(f, "{}", navrat)
         }
@@ -276,8 +277,8 @@ pub mod library_jks {
         }
 
         /// Nájde pesničku podľa id.
-        pub fn get_song_by_id(&self, id: i32) -> Option<&SongJks> {
-            self.piesne.iter().find(|s| s.id == id)
+        pub fn get_song_by_id(&self, id: i32, typ_piesne: TypPiesne) -> Option<&SongJks> {
+            self.piesne.iter().find(|s| s.id == id && s.typ_pesnicky == typ_piesne)
         }
 
         /// Pridá pesničku a udržiava zoznam zoradený podľa id.
@@ -287,8 +288,12 @@ pub mod library_jks {
         }
 
         /// Odstráni pesničku podľa id, ak existuje.
-        pub fn remove_song_by_id(&mut self, id: i32) {
-            if let Some(index) = self.piesne.iter().position(|s| s.id == id) {
+        pub fn remove_song_by_id(&mut self, id: i32, typ_piesne: TypPiesne) {
+            if let Some(index) = self
+                .piesne
+                .iter()
+                .position(|s| s.id == id && s.typ_pesnicky == typ_piesne)
+            {
                 self.piesne.remove(index);
             }
         }
