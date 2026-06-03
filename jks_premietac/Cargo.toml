@@ -7,7 +7,7 @@ license = "MIT"
 edition = "2024"
 
 [dependencies]
-prehladavac_db_jks ={ path = "../prehladavac_db_jks"}
+prehladavac_db_jks = { path = "../prehladavac_db_jks" }
 crossterm = { version = "0.29.0", features = ["event-stream"] }
 futures = "0.3.31"
 ratatui = "0.30.0"
@@ -18,6 +18,8 @@ native-dialog = "0.9.6"
 tui-tree-widget = "0.24.0"
 egui = "0.34.2"
 eframe = "0.34.2"
+serialport = "4.9.0"
+
 
 # Read the optimization guideline for more details: https://ratatui.rs/recipes/apps/release-your-app/#optimizations
 [profile.release]

@@ -51,6 +51,17 @@ pub enum AppEvent {
     DeleteSong,
 
     PresentationStart,
+    PresentationStop,
+    PresentationToggleDark,
+    NextSloha,
+    PrevSloha,
+    NextPiesen,
+    PrevPiesen,
+    SendCurrentSong,
+    ConnectSerial,
+
+    LoadingProgress(f32), // 0.0 – 1.0
+    LoadingDone,
 }
 
 /// Terminal event handler.
@@ -69,6 +80,9 @@ impl EventHandler {
         let actor = EventTask::new(sender.clone());
         tokio::spawn(async { actor.run().await });
         Self { sender, receiver }
+    }
+    pub fn sender(&self) -> mpsc::UnboundedSender<Event> {
+        self.sender.clone()
     }
 
     /// Receives an event from the sender.

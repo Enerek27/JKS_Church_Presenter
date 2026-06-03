@@ -5,6 +5,7 @@ pub mod dominikani_logo;
 pub mod event;
 pub mod file_opener;
 pub mod popups;
+pub mod seial_comunikator;
 pub mod song_lister;
 pub mod ui;
 

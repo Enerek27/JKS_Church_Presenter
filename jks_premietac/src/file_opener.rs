@@ -170,7 +170,7 @@ fn nacitaj_zo_suboru(song_manager: &mut SongManager, songa_edit: &SongJks) {
     db_delete_song(songa_edit.id, songa_edit.typ_pesnicky);
     song_manager.remove_song_by_id(songa_edit.id, songa_edit.typ_pesnicky);
     db_insert_song(&nova_songa);
-    song_manager.add_song(nova_songa);
+    song_manager.add_song(nova_songa, true);
 }
 
 /// Spustí externý editor a počká, kým používateľ súbor zavrie.

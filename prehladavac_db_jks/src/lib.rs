@@ -12,10 +12,6 @@ pub mod library_jks {
 
     use serde::{Deserialize, Serialize};
 
-
-
-
-
     /// Jedna strofa JKS pesničky uložená v pamäti.
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct StrofaJKS {
@@ -278,13 +274,17 @@ pub mod library_jks {
 
         /// Nájde pesničku podľa id.
         pub fn get_song_by_id(&self, id: i32, typ_piesne: TypPiesne) -> Option<&SongJks> {
-            self.piesne.iter().find(|s| s.id == id && s.typ_pesnicky == typ_piesne)
+            self.piesne
+                .iter()
+                .find(|s| s.id == id && s.typ_pesnicky == typ_piesne)
         }
 
         /// Pridá pesničku a udržiava zoznam zoradený podľa id.
-        pub fn add_song(&mut self, napridanie: SongJks) {
+        pub fn add_song(&mut self, napridanie: SongJks, sort: bool) {
             self.piesne.push(napridanie);
-            self.piesne.sort_by_key(|s| s.id);
+            if sort {
+                self.piesne.sort_by_key(|s| s.id);
+            }
         }
 
         /// Odstráni pesničku podľa id, ak existuje.

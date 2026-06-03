@@ -131,12 +131,10 @@ pub fn db_load_all() -> SongManager {
             .and_then(|s| s.typ_piesne)
             .unwrap_or(TypPiesne::Hymna);
 
-        manager.add_song(SongJks::new(
-            id_piesne,
-            pocet_strof,
-            strofy_piesne,
-            typ_pesnicky,
-        ));
+        manager.add_song(
+            SongJks::new(id_piesne, pocet_strof, strofy_piesne, typ_pesnicky),
+            false,
+        );
     }
 
     manager
