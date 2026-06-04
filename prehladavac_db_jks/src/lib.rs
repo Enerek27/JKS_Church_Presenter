@@ -33,6 +33,8 @@ pub mod library_jks {
         Zalm,
         Responz,
         Latinske,
+        Pohrebne,
+        Svadobne,
         Ostatne,
     }
 
@@ -74,6 +76,8 @@ pub mod library_jks {
                 "Antifona" => Some(TypPiesne::Antifona),
                 "Taize" => Some(TypPiesne::Taize),
                 "Responz" => Some(TypPiesne::Responz),
+                "Svadobné" => Some(TypPiesne::Svadobne),
+                "Pohrebné" => Some(TypPiesne::Pohrebne),
 
                 "Advent" => Some(TypPiesne::JKS(JKSTypPiesne::Advent)),
                 "Vianoce" => Some(TypPiesne::JKS(JKSTypPiesne::Vianoce)),
@@ -120,6 +124,8 @@ pub mod library_jks {
                 TypPiesne::Responz,
                 TypPiesne::Latinske,
                 TypPiesne::Ostatne,
+                TypPiesne::Pohrebne,
+                TypPiesne::Svadobne,
                 TypPiesne::JKS(JKSTypPiesne::Advent),
                 TypPiesne::JKS(JKSTypPiesne::Vianoce),
                 TypPiesne::JKS(JKSTypPiesne::KNajsvMenuJezisovmu),
@@ -156,6 +162,8 @@ pub mod library_jks {
                 TypPiesne::Responz => "Responz",
                 TypPiesne::Latinske => "Latinské",
                 TypPiesne::Ostatne => "Ostatné",
+                TypPiesne::Pohrebne => "Pohrebné",
+                TypPiesne::Svadobne => "Svadobné",
                 TypPiesne::JKS(jkstyp_piesne) => match jkstyp_piesne {
                     JKSTypPiesne::Advent => "Advent",
                     JKSTypPiesne::Vianoce => "Vianoce",
