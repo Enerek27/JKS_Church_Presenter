@@ -70,7 +70,7 @@ pub mod library_jks {
                 "Ostatné" => Some(TypPiesne::Ostatne),
                 "Antifona Šurin" => Some(TypPiesne::AntifonaSurin),
                 "Mládežnícka" => Some(TypPiesne::Mladeznicka),
-                "Hymna" => Some(TypPiesne::Hymna),
+                "Hymnus" => Some(TypPiesne::Hymna),
                 "Antifona" => Some(TypPiesne::Antifona),
                 "Taize" => Some(TypPiesne::Taize),
                 "Responz" => Some(TypPiesne::Responz),
@@ -149,7 +149,7 @@ pub mod library_jks {
             let navrat = match self {
                 TypPiesne::AntifonaSurin => "Antifona Šurin",
                 TypPiesne::Mladeznicka => "Mládežnícka",
-                TypPiesne::Hymna => "Hymna",
+                TypPiesne::Hymna => "Hymnus",
                 TypPiesne::Antifona => "Antifona",
                 TypPiesne::Taize => "Taize",
                 TypPiesne::Zalm => "Žalm",

@@ -297,13 +297,13 @@ impl App {
         } else {
             match self.focusing_widget {
                 FocusedWidget::Left => {
-                    "Tab: panel  |  Šípky: pohyb  |  Medzerník: pridať  |  Enter: upraviť  |  p: pridať  |  Delete: zmazať  |  q: koniec"
+                    "Tab: panel  |  Šípky: pohyb  |  Medzerník: pridať premietanie  |  Enter: upraviť  |  p: nová pieseň  |  Delete: zmazať  |  q: ukončiť program"
                 }
                 FocusedWidget::Right => {
-                    "Tab: panel  |  Šípky: pohyb  |  Medzerník: odobrať  |  Home: štart  |  q: koniec"
+                    "Tab: panel  |  Šípky: pohyb  |  Medzerník: odobrať premietanie |  Home: štart  |  q: ukončiť program"
                 }
                 FocusedWidget::Search => {
-                    "Píš pre hľadanie  |  Backspace: zmaž  |  Tab: panel  |  q: koniec"
+                    "Píš pre hľadanie  |  Backspace: zmaž  |  Tab: panel  |  q: ukončiť program"
                 }
             }
         };
